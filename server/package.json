@@ -1,16 +1,17 @@
 {
   "name": "project-management-saas-server",
-"description": "Backend API for the Project Management SaaS application",
-"type": "module",
-"main": "src/server.js",
-"scripts": {
-  "start": "node src/server.js",
-  "dev": "node --watch src/server.js"
-},
+  "description": "Backend API for the Project Management SaaS application",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
   "keywords": [],
   "author": "Elias Attieh",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^17.4.2",
     "express": "^5.2.1"
   }
 }
