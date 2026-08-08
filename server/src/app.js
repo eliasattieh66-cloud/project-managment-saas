@@ -1,4 +1,5 @@
 import express from "express";
+import healthRoutes from "./routes/health.routes.js";
 
 const app = express();
 
@@ -10,11 +11,6 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    message: "Backend API is running",
-  });
-});
+app.use("/health", healthRoutes);
 
 export default app;
