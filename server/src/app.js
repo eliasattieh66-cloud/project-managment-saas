@@ -12,5 +12,4 @@ app.get("/", (req, res) => {
 });
 
 app.use("/health", healthRoutes);
-
 export default app;
