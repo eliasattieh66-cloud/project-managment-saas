@@ -1,0 +1,10 @@
+CREATE TABLE attachments (
+  id BIGSERIAL PRIMARY KEY,
+  task_id BIGINT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  uploaded_by BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  file_name VARCHAR(255) NOT NULL,
+  file_url TEXT NOT NULL,
+  file_type VARCHAR(100),
+  file_size BIGINT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
