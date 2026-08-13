@@ -1,5 +1,5 @@
-import { registerUser } from "./auth.service.js";
-import { validateRegisterInput } from "./auth.validation.js";
+import { loginUser, registerUser } from "./auth.service.js";
+import {validateLoginInput, validateRegisterInput } from "./auth.validation.js";
 
 export async function register(req, res) {
   try {
@@ -16,6 +16,30 @@ export async function register(req, res) {
 
     return res.status(201).json({
       message: "User registered successfully.",
+      user,
+    });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      message: error.message || "Something went wrong.",
+    });
+  }
+}
+
+export async function login(req, res) {
+  try {
+    const validation = validateLoginInput(req.body);
+
+    if (!validation.isValid) {
+      return res.status(400).json({
+        message: "Validation failed.",
+        errors: validation.errors,
+      });
+    }
+
+    const user = await loginUser(req.body);
+
+    return res.status(200).json({
+      message: "Login successful.",
       user,
     });
   } catch (error) {
