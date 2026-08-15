@@ -1,7 +1,7 @@
 import { loginUser, registerUser } from "./auth.service.js";
-import {validateLoginInput, validateRegisterInput } from "./auth.validation.js";
+import { validateLoginInput, validateRegisterInput } from "./auth.validation.js";
 
-export async function register(req, res) {
+export async function register(req, res, next) {
   try {
     const validation = validateRegisterInput(req.body);
 
@@ -19,13 +19,11 @@ export async function register(req, res) {
       user,
     });
   } catch (error) {
-    return res.status(error.statusCode || 500).json({
-      message: error.message || "Something went wrong.",
-    });
+    next(error);
   }
 }
 
-export async function login(req, res) {
+export async function login(req, res, next) {
   try {
     const validation = validateLoginInput(req.body);
 
@@ -43,8 +41,6 @@ export async function login(req, res) {
       user,
     });
   } catch (error) {
-    return res.status(error.statusCode || 500).json({
-      message: error.message || "Something went wrong.",
-    });
+    next(error);
   }
 }

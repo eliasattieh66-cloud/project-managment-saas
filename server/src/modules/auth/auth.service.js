@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { createUser, findUserByEmail } from "./auth.repository.js";
+import { AppError } from "../../utils/AppError.js";
 
 const PASSWORD_SALT_ROUNDS = 10;
 
@@ -9,9 +10,7 @@ export async function registerUser({ name, email, password }) {
   const existingUser = await findUserByEmail(normalizedEmail);
 
   if (existingUser) {
-    const error = new Error("Email is already registered.");
-    error.statusCode = 409;
-    throw error;
+    throw new AppError("Email is already registered.", 409);
   }
 
   const passwordHash = await bcrypt.hash(password, PASSWORD_SALT_ROUNDS);
@@ -31,17 +30,13 @@ export async function loginUser({ email, password }) {
   const user = await findUserByEmail(normalizedEmail);
 
   if (!user) {
-    const error = new Error("Invalid email or password.");
-    error.statusCode = 401;
-    throw error;
+    throw new AppError("Invalid email or password.", 401);
   }
 
   const isPasswordCorrect = await bcrypt.compare(password, user.password_hash);
 
   if (!isPasswordCorrect) {
-    const error = new Error("Invalid email or password.");
-    error.statusCode = 401;
-    throw error;
+    throw new AppError("Invalid email or password.", 401);
   }
 
   return {
