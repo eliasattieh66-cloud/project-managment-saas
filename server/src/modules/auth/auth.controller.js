@@ -1,46 +1,38 @@
 import { loginUser, registerUser } from "./auth.service.js";
 import { validateLoginInput, validateRegisterInput } from "./auth.validation.js";
 
-export async function register(req, res, next) {
-  try {
-    const validation = validateRegisterInput(req.body);
+export async function register(req, res) {
+  const validation = validateRegisterInput(req.body);
 
-    if (!validation.isValid) {
-      return res.status(400).json({
-        message: "Validation failed.",
-        errors: validation.errors,
-      });
-    }
-
-    const user = await registerUser(req.body);
-
-    return res.status(201).json({
-      message: "User registered successfully.",
-      user,
+  if (!validation.isValid) {
+    return res.status(400).json({
+      message: "Validation failed.",
+      errors: validation.errors,
     });
-  } catch (error) {
-    next(error);
   }
+
+  const user = await registerUser(req.body);
+
+  return res.status(201).json({
+    message: "User registered successfully.",
+    user,
+  });
 }
 
-export async function login(req, res, next) {
-  try {
-    const validation = validateLoginInput(req.body);
+export async function login(req, res) {
+  const validation = validateLoginInput(req.body);
 
-    if (!validation.isValid) {
-      return res.status(400).json({
-        message: "Validation failed.",
-        errors: validation.errors,
-      });
-    }
-
-    const user = await loginUser(req.body);
-
-    return res.status(200).json({
-      message: "Login successful.",
-      user,
+  if (!validation.isValid) {
+    return res.status(400).json({
+      message: "Validation failed.",
+      errors: validation.errors,
     });
-  } catch (error) {
-    next(error);
   }
+
+  const user = await loginUser(req.body);
+
+  return res.status(200).json({
+    message: "Login successful.",
+    user,
+  });
 }
