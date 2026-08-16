@@ -1,14 +1,12 @@
 import { loginUser, registerUser } from "./auth.service.js";
 import { validateLoginInput, validateRegisterInput } from "./auth.validation.js";
+import { AppError } from "../../utils/AppError.js";
 
 export async function register(req, res) {
   const validation = validateRegisterInput(req.body);
 
   if (!validation.isValid) {
-    return res.status(400).json({
-      message: "Validation failed.",
-      errors: validation.errors,
-    });
+    throw new AppError("Validation failed.", 400, validation.errors);
   }
 
   const user = await registerUser(req.body);
@@ -23,10 +21,7 @@ export async function login(req, res) {
   const validation = validateLoginInput(req.body);
 
   if (!validation.isValid) {
-    return res.status(400).json({
-      message: "Validation failed.",
-      errors: validation.errors,
-    });
+    throw new AppError("Validation failed.", 400, validation.errors);
   }
 
   const user = await loginUser(req.body);
