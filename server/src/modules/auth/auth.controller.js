@@ -1,6 +1,7 @@
 import { loginUser, registerUser } from "./auth.service.js";
 import { validateLoginInput, validateRegisterInput } from "./auth.validation.js";
 import { AppError } from "../../utils/AppError.js";
+import { generateAuthToken } from "../../utils/token.js";
 
 export async function register(req, res) {
   const validation = validateRegisterInput(req.body);
@@ -25,9 +26,11 @@ export async function login(req, res) {
   }
 
   const user = await loginUser(req.body);
+  const token = generateAuthToken(user);
 
   return res.status(200).json({
     message: "Login successful.",
     user,
+    token,
   });
 }
