@@ -1,5 +1,8 @@
 import { validateCreateWorkspaceInput } from "./workspace.validation.js";
-import { createWorkspace } from "./workspace.service.js";
+import {
+  createWorkspace,
+  listWorkspacesForUser,
+} from "./workspace.service.js";
 
 export async function createWorkspaceController(req, res) {
   const validatedData = validateCreateWorkspaceInput(req.body);
@@ -13,6 +16,17 @@ export async function createWorkspaceController(req, res) {
     status: "success",
     data: {
       workspace,
+    },
+  });
+}
+
+export async function listWorkspacesController(req, res) {
+  const workspaces = await listWorkspacesForUser(req.user.id);
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      workspaces,
     },
   });
 }

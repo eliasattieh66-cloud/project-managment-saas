@@ -1,4 +1,4 @@
-import { createWorkspaceWithOwner } from "./workspace.repository.js";
+import { createWorkspaceWithOwner,findWorkspacesByUserId, } from "./workspace.repository.js";
 
 export async function createWorkspace({ name, ownerId }) {
   const workspace = await createWorkspaceWithOwner({
@@ -7,4 +7,9 @@ export async function createWorkspace({ name, ownerId }) {
   });
 
   return workspace;
+}
+export async function listWorkspacesForUser(userId) {
+  const workspaces = await findWorkspacesByUserId(userId);
+
+  return workspaces;
 }

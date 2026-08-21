@@ -40,3 +40,25 @@ export async function createWorkspaceWithOwner({ name, ownerId }) {
     client.release();
   }
 }
+
+export async function findWorkspacesByUserId(userId) {
+  const result = await pool.query(
+    `
+    SELECT
+      w.id,
+      w.name,
+      w.owner_id,
+      wm.role,
+      w.created_at,
+      w.updated_at
+    FROM workspaces w
+    INNER JOIN workspace_members wm
+      ON wm.workspace_id = w.id
+    WHERE wm.user_id = $1
+    ORDER BY w.created_at DESC
+    `,
+    [userId]
+  );
+
+  return result.rows;
+}
