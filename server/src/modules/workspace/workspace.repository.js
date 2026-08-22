@@ -62,3 +62,29 @@ export async function findWorkspacesByUserId(userId) {
 
   return result.rows;
 }
+
+export async function findMembership(workspaceId, userId) {
+  const result = await pool.query(
+    `
+    SELECT id, workspace_id, user_id, role, created_at, updated_at
+    FROM workspace_members
+    WHERE workspace_id = $1 AND user_id = $2
+    `,
+    [workspaceId, userId]
+  );
+
+  return result.rows[0] || null;
+}
+
+export async function addMember({ workspaceId, userId, role }) {
+  const result = await pool.query(
+    `
+    INSERT INTO workspace_members (workspace_id, user_id, role)
+    VALUES ($1, $2, $3)
+    RETURNING id, workspace_id, user_id, role, created_at, updated_at
+    `,
+    [workspaceId, userId, role]
+  );
+
+  return result.rows[0];
+}

@@ -1,7 +1,11 @@
-import { validateCreateWorkspaceInput } from "./workspace.validation.js";
+import {
+  validateCreateWorkspaceInput,
+  validateAddMemberInput,
+} from "./workspace.validation.js";
 import {
   createWorkspace,
   listWorkspacesForUser,
+  addMemberToWorkspace,
 } from "./workspace.service.js";
 
 export async function createWorkspaceController(req, res) {
@@ -27,6 +31,24 @@ export async function listWorkspacesController(req, res) {
     status: "success",
     data: {
       workspaces,
+    },
+  });
+}
+
+export async function addMemberController(req, res) {
+  const validatedData = validateAddMemberInput(req.body);
+
+  const member = await addMemberToWorkspace({
+    workspaceId: req.params.workspaceId,
+    requesterId: req.user.id,
+    email: validatedData.email,
+    role: validatedData.role,
+  });
+
+  res.status(201).json({
+    status: "success",
+    data: {
+      member,
     },
   });
 }
