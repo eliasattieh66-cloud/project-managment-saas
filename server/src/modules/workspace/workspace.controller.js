@@ -6,6 +6,7 @@ import {
   createWorkspace,
   listWorkspacesForUser,
   addMemberToWorkspace,
+  listMembersForWorkspace,
 } from "./workspace.service.js";
 
 export async function createWorkspaceController(req, res) {
@@ -49,6 +50,20 @@ export async function addMemberController(req, res) {
     status: "success",
     data: {
       member,
+    },
+  });
+}
+
+export async function listMembersController(req, res) {
+  const members = await listMembersForWorkspace({
+    workspaceId: req.params.workspaceId,
+    requesterId: req.user.id,
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      members,
     },
   });
 }

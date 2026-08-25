@@ -3,6 +3,7 @@ import {
   findWorkspacesByUserId,
   findMembership,
   addMember,
+  findMembersByWorkspaceId,
 } from "./workspace.repository.js";
 import { findUserByEmail } from "../auth/auth.repository.js";
 import { AppError } from "../../utils/AppError.js";
@@ -47,4 +48,16 @@ export async function addMemberToWorkspace({ workspaceId, requesterId, email, ro
   const member = await addMember({ workspaceId, userId: user.id, role });
 
   return member;
+}
+
+export async function listMembersForWorkspace({ workspaceId, requesterId }) {
+  const requesterMembership = await findMembership(workspaceId, requesterId);
+
+  if (!requesterMembership) {
+    throw new AppError("Workspace not found.", 404);
+  }
+
+  const members = await findMembersByWorkspaceId(workspaceId);
+
+  return members;
 }

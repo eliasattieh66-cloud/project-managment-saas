@@ -88,3 +88,24 @@ export async function addMember({ workspaceId, userId, role }) {
 
   return result.rows[0];
 }
+
+export async function findMembersByWorkspaceId(workspaceId) {
+  const result = await pool.query(
+    `
+    SELECT
+      u.id,
+      u.name,
+      u.email,
+      wm.role,
+      wm.created_at AS joined_at
+    FROM workspace_members wm
+    INNER JOIN users u
+      ON u.id = wm.user_id
+    WHERE wm.workspace_id = $1
+    ORDER BY wm.created_at ASC
+    `,
+    [workspaceId]
+  );
+
+  return result.rows;
+}
