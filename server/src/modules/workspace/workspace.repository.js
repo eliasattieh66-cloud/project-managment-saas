@@ -109,3 +109,16 @@ export async function findMembersByWorkspaceId(workspaceId) {
 
   return result.rows;
 }
+
+export async function findWorkspaceById(workspaceId) {
+  const result = await pool.query(
+    `
+    SELECT id, name, owner_id, created_at, updated_at
+    FROM workspaces
+    WHERE id = $1
+    `,
+    [workspaceId]
+  );
+
+  return result.rows[0] || null;
+}

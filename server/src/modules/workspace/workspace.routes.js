@@ -6,6 +6,7 @@ import {
   listWorkspacesController,
   addMemberController,
   listMembersController,
+  getWorkspaceController,
 } from "./workspace.controller.js";
 
 const router = express.Router();
@@ -14,5 +15,6 @@ router.post("/", authenticate, asyncHandler(createWorkspaceController));
 router.get("/", authenticate, asyncHandler(listWorkspacesController));
 router.post("/:workspaceId/members", authenticate, asyncHandler(addMemberController));
 router.get("/:workspaceId/members", authenticate, asyncHandler(listMembersController));
+router.get("/:workspaceId", authenticate, asyncHandler(getWorkspaceController));
 
 export default router;
