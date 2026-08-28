@@ -3,6 +3,7 @@ import {
   findProjectsByWorkspaceId,
   findProjectById,
   updateProject,
+  archiveProject,
 } from "./project.repository.js";
 import { findMembership } from "../workspace/workspace.repository.js";
 import { AppError } from "../../utils/AppError.js";
@@ -52,6 +53,32 @@ export async function getProjectById({ workspaceId, projectId, requesterId }) {
   if (!project) {
     throw new AppError("Project not found.", 404);
   }
+
+  return project;
+}
+
+export async function archiveProjectInWorkspace({ workspaceId, projectId, requesterId }) {
+  const requesterMembership = await findMembership(workspaceId, requesterId);
+
+  if (!requesterMembership) {
+    throw new AppError("Workspace not found.", 404);
+  }
+
+  if (!["owner", "admin"].includes(requesterMembership.role)) {
+    throw new AppError("You do not have permission to archive projects in this workspace.", 403);
+  }
+
+  const existingProject = await findProjectById(projectId, workspaceId);
+
+  if (!existingProject) {
+    throw new AppError("Project not found.", 404);
+  }
+
+  if (existingProject.status === "archived") {
+    throw new AppError("Project is already archived.", 409);
+  }
+
+  const project = await archiveProject({ projectId, workspaceId });
 
   return project;
 }

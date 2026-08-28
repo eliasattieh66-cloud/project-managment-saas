@@ -3,7 +3,8 @@ import {
   createProjectInWorkspace,
   listProjectsForWorkspace,
   getProjectById,
-  updateProjectInWorkspace
+  updateProjectInWorkspace,
+  archiveProjectInWorkspace
 } from "./project.service.js";
 
 export async function createProjectController(req, res) {
@@ -60,6 +61,21 @@ export async function updateProjectController(req, res) {
     projectId: req.params.projectId,
     requesterId: req.user.id,
     updates,
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      project,
+    },
+  });
+}
+
+export async function archiveProjectController(req, res) {
+  const project = await archiveProjectInWorkspace({
+    workspaceId: req.params.workspaceId,
+    projectId: req.params.projectId,
+    requesterId: req.user.id,
   });
 
   res.status(200).json({

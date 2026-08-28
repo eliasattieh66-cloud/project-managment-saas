@@ -85,3 +85,25 @@ export async function updateProject({ projectId, workspaceId, name, description 
 
   return result.rows[0];
 }
+
+export async function archiveProject({ projectId, workspaceId }) {
+  const result = await pool.query(
+    `
+    UPDATE projects
+    SET status = 'archived', updated_at = NOW()
+    WHERE id = $1 AND workspace_id = $2
+    RETURNING
+      id,
+      workspace_id,
+      name,
+      description,
+      status,
+      created_by,
+      created_at,
+      updated_at
+    `,
+    [projectId, workspaceId]
+  );
+
+  return result.rows[0];
+}
