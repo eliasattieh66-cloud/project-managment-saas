@@ -20,3 +20,46 @@ export async function createProject({ workspaceId, name, description, createdBy 
 
   return result.rows[0];
 }
+
+export async function findProjectsByWorkspaceId(workspaceId) {
+  const result = await pool.query(
+    `
+    SELECT
+      id,
+      workspace_id,
+      name,
+      description,
+      status,
+      created_by,
+      created_at,
+      updated_at
+    FROM projects
+    WHERE workspace_id = $1
+    ORDER BY created_at DESC
+    `,
+    [workspaceId]
+  );
+
+  return result.rows;
+}
+
+export async function findProjectById(projectId, workspaceId) {
+  const result = await pool.query(
+    `
+    SELECT
+      id,
+      workspace_id,
+      name,
+      description,
+      status,
+      created_by,
+      created_at,
+      updated_at
+    FROM projects
+    WHERE id = $1 AND workspace_id = $2
+    `,
+    [projectId, workspaceId]
+  );
+
+  return result.rows[0] || null;
+}
