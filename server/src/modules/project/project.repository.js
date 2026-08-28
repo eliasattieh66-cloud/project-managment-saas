@@ -63,3 +63,25 @@ export async function findProjectById(projectId, workspaceId) {
 
   return result.rows[0] || null;
 }
+
+export async function updateProject({ projectId, workspaceId, name, description }) {
+  const result = await pool.query(
+    `
+    UPDATE projects
+    SET name = $1, description = $2, updated_at = NOW()
+    WHERE id = $3 AND workspace_id = $4
+    RETURNING
+      id,
+      workspace_id,
+      name,
+      description,
+      status,
+      created_by,
+      created_at,
+      updated_at
+    `,
+    [name, description, projectId, workspaceId]
+  );
+
+  return result.rows[0];
+}

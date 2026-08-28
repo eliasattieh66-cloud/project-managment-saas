@@ -1,8 +1,9 @@
-import { validateCreateProjectInput } from "./project.validation.js";
+import { validateCreateProjectInput, validateUpdateProjectInput } from "./project.validation.js";
 import {
   createProjectInWorkspace,
   listProjectsForWorkspace,
   getProjectById,
+  updateProjectInWorkspace
 } from "./project.service.js";
 
 export async function createProjectController(req, res) {
@@ -41,6 +42,24 @@ export async function getProjectController(req, res) {
     workspaceId: req.params.workspaceId,
     projectId: req.params.projectId,
     requesterId: req.user.id,
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      project,
+    },
+  });
+}
+
+export async function updateProjectController(req, res) {
+  const updates = validateUpdateProjectInput(req.body);
+
+  const project = await updateProjectInWorkspace({
+    workspaceId: req.params.workspaceId,
+    projectId: req.params.projectId,
+    requesterId: req.user.id,
+    updates,
   });
 
   res.status(200).json({
