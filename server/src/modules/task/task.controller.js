@@ -1,5 +1,10 @@
-import { validateCreateTaskInput } from "./task.validation.js";
-import { createTaskInProject,listTasksForProject,getTaskById} from "./task.service.js";
+import { validateCreateTaskInput, validateAssignTaskInput } from "./task.validation.js";
+import {
+  createTaskInProject,
+  listTasksForProject,
+  getTaskById,
+  assignTaskInProject,
+} from "./task.service.js";
 
 export async function createTaskController(req, res) {
   const validatedData = validateCreateTaskInput(req.body);
@@ -41,6 +46,25 @@ export async function getTaskController(req, res) {
     projectId: req.params.projectId,
     taskId: req.params.taskId,
     requesterId: req.user.id,
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      task,
+    },
+  });
+}
+
+export async function assignTaskController(req, res) {
+  const validatedData = validateAssignTaskInput(req.body);
+
+  const task = await assignTaskInProject({
+    workspaceId: req.params.workspaceId,
+    projectId: req.params.projectId,
+    taskId: req.params.taskId,
+    requesterId: req.user.id,
+    userId: validatedData.userId,
   });
 
   res.status(200).json({

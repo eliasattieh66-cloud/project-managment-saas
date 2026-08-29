@@ -55,3 +55,25 @@ export function validateCreateTaskInput({ title, description, priority, dueDate 
     dueDate: normalizedDueDate,
   };
 }
+
+export function validateAssignTaskInput({ userId }) {
+  const errors = {};
+
+  if (userId === undefined || userId === null) {
+    errors.userId = "userId is required.";
+  } else if (
+    (typeof userId !== "number" && typeof userId !== "string") ||
+    String(userId).trim().length === 0 ||
+    Number.isNaN(Number(userId))
+  ) {
+    errors.userId = "userId must be a valid number.";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw new AppError("Validation failed.", 400, errors);
+  }
+
+  return {
+    userId,
+  };
+}

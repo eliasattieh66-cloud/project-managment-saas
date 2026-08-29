@@ -1,4 +1,9 @@
-import { createTask,findTasksByProjectId,findTaskById } from "./task.repository.js";
+import {
+  createTask,
+  findTasksByProjectId,
+  findTaskById,
+  assignTask,
+} from "./task.repository.js";
 import { findMembership } from "../workspace/workspace.repository.js";
 import { findProjectById } from "../project/project.repository.js";
 import { AppError } from "../../utils/AppError.js";
@@ -38,6 +43,40 @@ export async function createTaskInProject({
   });
 
   return task;
+}
+
+export async function assignTaskInProject({ workspaceId, projectId, taskId, requesterId, userId }) {
+  const requesterMembership = await findMembership(workspaceId, requesterId);
+
+  if (!requesterMembership) {
+    throw new AppError("Workspace not found.", 404);
+  }
+
+  if (!["owner", "admin", "member"].includes(requesterMembership.role)) {
+    throw new AppError("You do not have permission to assign tasks in this project.", 403);
+  }
+
+  const project = await findProjectById(projectId, workspaceId);
+
+  if (!project) {
+    throw new AppError("Project not found.", 404);
+  }
+
+  const task = await findTaskById(taskId, projectId);
+
+  if (!task) {
+    throw new AppError("Task not found.", 404);
+  }
+
+  const targetMembership = await findMembership(workspaceId, userId);
+
+  if (!targetMembership) {
+    throw new AppError("User must be a member of this workspace to be assigned this task.", 400);
+  }
+
+  const updatedTask = await assignTask({ taskId, projectId, assignedTo: userId });
+
+  return updatedTask;
 }
 
 export async function listTasksForProject({ workspaceId, projectId, requesterId }) {

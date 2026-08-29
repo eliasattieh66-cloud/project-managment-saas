@@ -72,3 +72,28 @@ export async function findTaskById(taskId, projectId) {
 
   return result.rows[0] || null;
 }
+
+export async function assignTask({ taskId, projectId, assignedTo }) {
+  const result = await pool.query(
+    `
+    UPDATE tasks
+    SET assigned_to = $1, updated_at = NOW()
+    WHERE id = $2 AND project_id = $3
+    RETURNING
+      id,
+      project_id,
+      title,
+      description,
+      status,
+      priority,
+      assigned_to,
+      created_by,
+      due_date,
+      created_at,
+      updated_at
+    `,
+    [assignedTo, taskId, projectId]
+  );
+
+  return result.rows[0];
+}
