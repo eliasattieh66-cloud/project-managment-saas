@@ -4,6 +4,7 @@ import {
   findTaskById,
   assignTask,
   updateTaskStatus,
+  updateTask,
 } from "./task.repository.js";
 import { findMembership } from "../workspace/workspace.repository.js";
 import { findProjectById } from "../project/project.repository.js";
@@ -104,6 +105,41 @@ export async function updateTaskStatusInProject({ workspaceId, projectId, taskId
   }
 
   const updatedTask = await updateTaskStatus({ taskId, projectId, status });
+
+  return updatedTask;
+}
+
+export async function updateTaskInProject({ workspaceId, projectId, taskId, requesterId, updates }) {
+  const requesterMembership = await findMembership(workspaceId, requesterId);
+
+  if (!requesterMembership) {
+    throw new AppError("Workspace not found.", 404);
+  }
+
+  if (!["owner", "admin", "member"].includes(requesterMembership.role)) {
+    throw new AppError("You do not have permission to update tasks in this project.", 403);
+  }
+
+  const project = await findProjectById(projectId, workspaceId);
+
+  if (!project) {
+    throw new AppError("Project not found.", 404);
+  }
+
+  const existingTask = await findTaskById(taskId, projectId);
+
+  if (!existingTask) {
+    throw new AppError("Task not found.", 404);
+  }
+
+  const updatedTask = await updateTask({
+    taskId,
+    projectId,
+    title: updates.title !== undefined ? updates.title : existingTask.title,
+    description: updates.description !== undefined ? updates.description : existingTask.description,
+    priority: updates.priority !== undefined ? updates.priority : existingTask.priority,
+    dueDate: updates.dueDate !== undefined ? updates.dueDate : existingTask.due_date,
+  });
 
   return updatedTask;
 }

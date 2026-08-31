@@ -122,3 +122,28 @@ export async function updateTaskStatus({ taskId, projectId, status }) {
 
   return result.rows[0];
 }
+
+export async function updateTask({ taskId, projectId, title, description, priority, dueDate }) {
+  const result = await pool.query(
+    `
+    UPDATE tasks
+    SET title = $1, description = $2, priority = $3, due_date = $4, updated_at = NOW()
+    WHERE id = $5 AND project_id = $6
+    RETURNING
+      id,
+      project_id,
+      title,
+      description,
+      status,
+      priority,
+      assigned_to,
+      created_by,
+      due_date,
+      created_at,
+      updated_at
+    `,
+    [title, description, priority, dueDate, taskId, projectId]
+  );
+
+  return result.rows[0];
+}

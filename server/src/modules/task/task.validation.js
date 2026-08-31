@@ -96,3 +96,63 @@ export function validateUpdateTaskStatusInput({ status }) {
     status,
   };
 }
+
+export function validateUpdateTaskInput({ title, description, priority, dueDate }) {
+  const errors = {};
+  const updates = {};
+
+  if (title !== undefined) {
+    if (typeof title !== "string") {
+      errors.title = "Task title must be a string.";
+    } else if (title.trim().length === 0) {
+      errors.title = "Task title cannot be empty.";
+    } else if (title.trim().length > 200) {
+      errors.title = "Task title must be less than or equal to 200 characters.";
+    } else {
+      updates.title = title.trim();
+    }
+  }
+
+  if (description !== undefined) {
+    if (description !== null && typeof description !== "string") {
+      errors.description = "Task description must be a string.";
+    } else {
+      updates.description =
+        description === null || description.trim().length === 0
+          ? null
+          : description.trim();
+    }
+  }
+
+  if (priority !== undefined) {
+    if (typeof priority !== "string" || !ALLOWED_PRIORITIES.includes(priority)) {
+      errors.priority = `Priority must be one of: ${ALLOWED_PRIORITIES.join(", ")}.`;
+    } else {
+      updates.priority = priority;
+    }
+  }
+
+  if (dueDate !== undefined) {
+    if (dueDate === null) {
+      updates.dueDate = null;
+    } else {
+      const parsedDate = new Date(dueDate);
+
+      if (Number.isNaN(parsedDate.getTime())) {
+        errors.dueDate = "Due date must be a valid date.";
+      } else {
+        updates.dueDate = parsedDate;
+      }
+    }
+  }
+
+  if (Object.keys(updates).length === 0 && Object.keys(errors).length === 0) {
+    errors.body = "At least one field must be provided.";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw new AppError("Validation failed.", 400, errors);
+  }
+
+  return updates;
+}
