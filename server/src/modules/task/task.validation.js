@@ -1,6 +1,7 @@
 import { AppError } from "../../utils/AppError.js";
 
 const ALLOWED_PRIORITIES = ["low", "medium", "high"];
+const ALLOWED_STATUSES = ["todo", "in_progress", "done"];
 
 export function validateCreateTaskInput({ title, description, priority, dueDate }) {
   const errors = {};
@@ -75,5 +76,23 @@ export function validateAssignTaskInput({ userId }) {
 
   return {
     userId,
+  };
+}
+
+export function validateUpdateTaskStatusInput({ status }) {
+  const errors = {};
+
+  if (status === undefined || status === null) {
+    errors.status = "Status is required.";
+  } else if (typeof status !== "string" || !ALLOWED_STATUSES.includes(status)) {
+    errors.status = `Status must be one of: ${ALLOWED_STATUSES.join(", ")}.`;
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw new AppError("Validation failed.", 400, errors);
+  }
+
+  return {
+    status,
   };
 }

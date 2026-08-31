@@ -1,9 +1,10 @@
-import { validateCreateTaskInput, validateAssignTaskInput } from "./task.validation.js";
+import { validateCreateTaskInput, validateAssignTaskInput, validateUpdateTaskStatusInput } from "./task.validation.js";
 import {
   createTaskInProject,
   listTasksForProject,
   getTaskById,
   assignTaskInProject,
+  updateTaskStatusInProject,
 } from "./task.service.js";
 
 export async function createTaskController(req, res) {
@@ -67,6 +68,24 @@ export async function assignTaskController(req, res) {
     userId: validatedData.userId,
   });
 
+  res.status(200).json({
+    status: "success",
+    data: {
+      task,
+    },
+  });
+}
+export async function updateTaskStatusController(req, res) {
+  const validatedData = validateUpdateTaskStatusInput(req.body);
+
+  const task = await updateTaskStatusInProject({
+    workspaceId: req.params.workspaceId,
+    projectId: req.params.projectId,
+    taskId: req.params.taskId,
+    requesterId: req.user.id,
+    status: validatedData.status,
+  });
+  
   res.status(200).json({
     status: "success",
     data: {
