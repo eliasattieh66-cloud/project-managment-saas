@@ -5,6 +5,7 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 import workspaceRoutes from "./modules/workspace/workspace.routes.js";
 import projectRoutes from "./modules/project/project.routes.js";
 import taskRoutes from "./modules/task/task.routes.js";
+import commentRoutes from "./modules/comment/comment.routes.js";
 const app = express();
 
 app.use(express.json());
@@ -20,6 +21,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/workspaces/:workspaceId/projects", projectRoutes);
 app.use("/api/workspaces/:workspaceId/projects/:projectId/tasks", taskRoutes);
+app.use(
+  "/api/workspaces/:workspaceId/projects/:projectId/tasks/:taskId/comments",
+  commentRoutes
+);
 app.use(errorHandler);
 
 export default app;
