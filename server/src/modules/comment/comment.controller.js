@@ -3,6 +3,7 @@ import {
   addCommentToTask,
   listCommentsForTask,
   updateCommentInTask,
+  deleteCommentFromTask,
 } from "./comment.service.js";
 
 export async function addCommentController(req, res) {
@@ -57,5 +58,20 @@ export async function updateCommentController(req, res) {
     data: {
       comment,
     },
+  });
+}
+
+export async function deleteCommentController(req, res) {
+  await deleteCommentFromTask({
+    workspaceId: req.params.workspaceId,
+    projectId: req.params.projectId,
+    taskId: req.params.taskId,
+    commentId: req.params.commentId,
+    requesterId: req.user.id,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "Comment deleted successfully.",
   });
 }

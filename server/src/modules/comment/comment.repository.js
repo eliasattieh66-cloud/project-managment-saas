@@ -68,3 +68,13 @@ export async function updateComment({ commentId, taskId, content }) {
 
   return result.rows[0];
 }
+
+export async function deleteComment({ commentId, taskId }) {
+  await pool.query(
+    `
+    DELETE FROM comments
+    WHERE id = $1 AND task_id = $2
+    `,
+    [commentId, taskId]
+  );
+}
