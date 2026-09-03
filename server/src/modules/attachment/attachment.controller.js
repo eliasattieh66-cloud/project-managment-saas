@@ -1,4 +1,10 @@
-import { addAttachmentToTask, listAttachmentsForTask } from "./attachment.service.js";
+import path from "path";
+import {
+  addAttachmentToTask,
+  listAttachmentsForTask,
+  getAttachmentForDownload,
+} from "./attachment.service.js";
+import { UPLOAD_DIRECTORY } from "../../middlewares/upload.middleware.js";
 
 export async function addAttachmentController(req, res) {
   const attachment = await addAttachmentToTask({
@@ -31,4 +37,18 @@ export async function listAttachmentsController(req, res) {
       attachments,
     },
   });
+}
+
+export async function downloadAttachmentController(req, res) {
+  const attachment = await getAttachmentForDownload({
+    workspaceId: req.params.workspaceId,
+    projectId: req.params.projectId,
+    taskId: req.params.taskId,
+    attachmentId: req.params.attachmentId,
+    requesterId: req.user.id,
+  });
+
+  const filePath = path.join(UPLOAD_DIRECTORY, path.basename(attachment.file_url));
+
+  res.download(filePath, attachment.file_name);
 }

@@ -45,3 +45,24 @@ export async function findAttachmentsByTaskId(taskId) {
 
   return result.rows;
 }
+
+export async function findAttachmentById(attachmentId, taskId) {
+  const result = await pool.query(
+    `
+    SELECT
+      id,
+      task_id,
+      uploaded_by,
+      file_name,
+      file_url,
+      file_type,
+      file_size,
+      created_at
+    FROM attachments
+    WHERE id = $1 AND task_id = $2
+    `,
+    [attachmentId, taskId]
+  );
+
+  return result.rows[0] || null;
+}

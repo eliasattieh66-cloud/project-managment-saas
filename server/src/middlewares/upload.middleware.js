@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
-const UPLOAD_DIRECTORY = path.join(currentDirectory, "..", "..", "uploads");
+export const UPLOAD_DIRECTORY = path.join(currentDirectory, "..", "..", "uploads");
 
 if (!fs.existsSync(UPLOAD_DIRECTORY)) {
   fs.mkdirSync(UPLOAD_DIRECTORY, { recursive: true });
