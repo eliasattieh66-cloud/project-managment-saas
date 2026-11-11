@@ -5,6 +5,7 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import WorkspacePage from "./pages/WorkspacePage.jsx";
 import ProjectPage from "./pages/ProjectPage.jsx";
+import TaskPage from "./pages/TaskPage.jsx";
 
 function App() {
   return (
@@ -35,6 +36,15 @@ function App() {
         element={
           <ProtectedRoute>
             <ProjectPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/workspaces/:workspaceId/projects/:projectId/tasks/:taskId"
+        element={
+          <ProtectedRoute>
+            <TaskPage />
           </ProtectedRoute>
         }
       />
