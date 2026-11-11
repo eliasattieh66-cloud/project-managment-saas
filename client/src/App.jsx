@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import WorkspacePage from "./pages/WorkspacePage.jsx";
+import ProjectPage from "./pages/ProjectPage.jsx";
 
 function App() {
   return (
@@ -25,6 +26,15 @@ function App() {
         element={
           <ProtectedRoute>
             <WorkspacePage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/workspaces/:workspaceId/projects/:projectId"
+        element={
+          <ProtectedRoute>
+            <ProjectPage />
           </ProtectedRoute>
         }
       />
