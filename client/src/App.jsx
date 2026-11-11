@@ -3,6 +3,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
+import WorkspacePage from "./pages/WorkspacePage.jsx";
 
 function App() {
   return (
@@ -15,6 +16,15 @@ function App() {
         element={
           <ProtectedRoute>
             <HomePage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/workspaces/:workspaceId"
+        element={
+          <ProtectedRoute>
+            <WorkspacePage />
           </ProtectedRoute>
         }
       />
