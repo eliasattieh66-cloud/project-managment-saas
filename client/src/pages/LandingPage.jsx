@@ -5,6 +5,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
+import HeroScene from "../components/HeroScene.jsx";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
@@ -97,6 +98,19 @@ function LandingPage() {
           },
           "-=0.4"
         );
+
+      gsap.from(".hero-scene", { opacity: 0, scale: 1.1, duration: 2, ease: "power2.out" });
+
+      gsap.to(".hero-scene-scroll", {
+        opacity: 0.15,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".hero-section",
+          start: "top top",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
 
       gsap.to(".hero-parallax", {
         y: -80,
@@ -230,6 +244,16 @@ function LandingPage() {
           aria-hidden="true"
           className="pointer-events-none absolute left-1/2 top-0 h-150 w-225 -translate-x-1/2 rounded-full bg-indigo-600/20 blur-3xl"
         />
+
+        <div
+          aria-hidden="true"
+          className="hero-scene-scroll pointer-events-none absolute inset-x-0 top-0 h-screen"
+        >
+          <div className="hero-scene h-full w-full">
+            <HeroScene />
+          </div>
+          <div className="absolute inset-0 bg-linear-to-b from-slate-950/40 via-slate-950/60 to-slate-950" />
+        </div>
 
         <div className="relative mx-auto max-w-4xl text-center">
           <span className="hero-badge inline-block rounded-full border border-indigo-400/30 bg-indigo-500/10 px-4 py-1.5 text-sm font-medium text-indigo-300">
