@@ -1,5 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
+import gsap from "gsap";
+import { SplitText } from "gsap/SplitText";
+import { Flip } from "gsap/Flip";
+import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getWorkspaceMembers } from "../api/workspaces.js";
 import { getProject, updateProject, archiveProject } from "../api/projects.js";
@@ -31,6 +35,13 @@ const INPUT_CLASSES =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15";
 
 const LABEL_CLASSES = "mb-1.5 block text-sm font-medium text-slate-700";
+
+gsap.registerPlugin(useGSAP, SplitText, Flip);
+gsap.config({ nullTargetWarn: false });
+
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 function ProjectPage() {
   const { workspaceId, projectId } = useParams();
@@ -83,6 +94,106 @@ function ProjectPage() {
 
     loadProject();
   }, [workspaceId, projectId]);
+
+  const pageRef = useRef(null);
+  const flipStateRef = useRef(null);
+
+  useGSAP(
+    () => {
+      if (loading || error || prefersReducedMotion()) {
+        return;
+      }
+
+      const title = SplitText.create(".project-title", {
+        type: "words,chars",
+        mask: "chars",
+      });
+
+      const timeline = gsap.timeline({
+        defaults: { ease: "power3.out" },
+        onComplete: () => title.revert(),
+      });
+
+      timeline
+        .from(title.chars, { yPercent: 110, duration: 0.7, stagger: 0.025 })
+        .from(
+          ".project-header-fade",
+          { opacity: 0, y: 12, duration: 0.5, stagger: 0.1, clearProps: "all" },
+          "-=0.4"
+        )
+        .from(
+          ".create-task-card",
+          { opacity: 0, y: 30, scale: 0.97, duration: 0.6, clearProps: "all" },
+          "-=0.3"
+        )
+        .from(
+          ".task-column",
+          { opacity: 0, y: 40, duration: 0.6, stagger: 0.12, clearProps: "all" },
+          "-=0.3"
+        )
+        .from(
+          ".column-dot",
+          {
+            scale: 0,
+            duration: 0.4,
+            ease: "back.out(3)",
+            stagger: 0.12,
+            clearProps: "all",
+          },
+          "<0.2"
+        )
+        .from(
+          ".task-card",
+          {
+            opacity: 0,
+            y: -30,
+            rotate: () => gsap.utils.random(-6, 6),
+            duration: 0.6,
+            ease: "back.out(1.8)",
+            stagger: 0.06,
+            clearProps: "all",
+          },
+          "-=0.3"
+        );
+    },
+    { scope: pageRef, dependencies: [loading, error] }
+  );
+
+  useGSAP(
+    () => {
+      const state = flipStateRef.current;
+
+      if (!state) {
+        return;
+      }
+
+      flipStateRef.current = null;
+
+      Flip.from(state, {
+        targets: ".task-card",
+        duration: 0.6,
+        ease: "power3.inOut",
+        absolute: true,
+        onEnter: (elements) =>
+          gsap.fromTo(
+            elements,
+            { opacity: 0, scale: 0.8 },
+            { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(2)" }
+          ),
+      });
+    },
+    { scope: pageRef, dependencies: [tasks] }
+  );
+
+  function captureTaskPositions() {
+    if (prefersReducedMotion() || !pageRef.current) {
+      return;
+    }
+
+    flipStateRef.current = Flip.getState(
+      pageRef.current.querySelectorAll(".task-card")
+    );
+  }
 
   function startEditing() {
     setEditName(project.name);
@@ -144,6 +255,7 @@ function ProjectPage() {
         priority: taskPriority,
         dueDate: taskDueDate || null,
       });
+      captureTaskPositions();
       setTasks((currentTasks) => [task, ...currentTasks]);
       setTaskTitle("");
       setTaskDescription("");
@@ -174,6 +286,7 @@ function ProjectPage() {
         taskId,
         status
       );
+      captureTaskPositions();
       replaceTask(updatedTask);
     } catch (error) {
       setTaskActionError(error.message);
@@ -231,7 +344,7 @@ function ProjectPage() {
   const canEditTasks = canEditProject;
 
   return (
-    <div className="space-y-8">
+    <div ref={pageRef} className="space-y-8">
       <div>
         <Link
           to={`/workspaces/${workspaceId}`}
@@ -302,7 +415,7 @@ function ProjectPage() {
           <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <h1 className="truncate text-3xl font-bold text-slate-900">
+                <h1 className="project-title truncate text-3xl font-bold text-slate-900">
                   {project.name}
                 </h1>
                 <span
@@ -311,12 +424,12 @@ function ProjectPage() {
                   {project.status}
                 </span>
               </div>
-              <p className="mt-2 max-w-2xl text-slate-500">
+              <p className="project-header-fade mt-2 max-w-2xl text-slate-500">
                 {project.description || "No description."}
               </p>
             </div>
 
-            <div className="flex shrink-0 gap-3">
+            <div className="project-header-fade flex shrink-0 gap-3">
               {canEditProject && (
                 <button
                   type="button"
@@ -349,7 +462,7 @@ function ProjectPage() {
       </div>
 
       {canEditTasks && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="create-task-card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">
             Create a task
           </h2>
@@ -449,9 +562,9 @@ function ProjectPage() {
             );
 
             return (
-              <div key={column.status} className="rounded-2xl bg-slate-100 p-3">
+              <div key={column.status} className="task-column rounded-2xl bg-slate-100 p-3">
                 <div className="mb-3 flex items-center gap-2 px-1">
-                  <span className={`h-2.5 w-2.5 rounded-full ${column.dotClass}`} />
+                  <span className={`column-dot h-2.5 w-2.5 rounded-full ${column.dotClass}`} />
                   <h3 className="text-sm font-semibold text-slate-700">
                     {column.label}
                   </h3>
@@ -470,7 +583,8 @@ function ProjectPage() {
                   {columnTasks.map((task) => (
                     <li
                       key={task.id}
-                      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+                      data-flip-id={task.id}
+                      className="task-card rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <Link
