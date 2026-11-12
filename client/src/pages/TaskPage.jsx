@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
+import gsap from "gsap";
+import { SplitText } from "gsap/SplitText";
+import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getWorkspaceMembers } from "../api/workspaces.js";
 import { getTask, updateTask } from "../api/tasks.js";
@@ -26,6 +29,13 @@ const INPUT_CLASSES =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15";
 
 const LABEL_CLASSES = "mb-1.5 block text-sm font-medium text-slate-700";
+
+gsap.registerPlugin(useGSAP, SplitText);
+gsap.config({ nullTargetWarn: false });
+
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 function TaskPage() {
   const { workspaceId, projectId, taskId } = useParams();
@@ -65,6 +75,74 @@ function TaskPage() {
 
     loadTask();
   }, [workspaceId, projectId, taskId]);
+
+  const pageRef = useRef(null);
+
+  useGSAP(
+    () => {
+      if (loading || error || prefersReducedMotion()) {
+        return;
+      }
+
+      if (editing) {
+        gsap.from(".edit-form > *", {
+          opacity: 0,
+          y: 16,
+          duration: 0.4,
+          ease: "power2.out",
+          stagger: 0.05,
+          clearProps: "all",
+        });
+        return;
+      }
+
+      const title = SplitText.create(".task-title", {
+        type: "words,chars",
+        mask: "chars",
+      });
+
+      const timeline = gsap.timeline({
+        defaults: { ease: "power3.out" },
+        onComplete: () => title.revert(),
+      });
+
+      timeline
+        .from(".task-main-card", {
+          opacity: 0,
+          y: 30,
+          duration: 0.6,
+          clearProps: "all",
+        })
+        .from(title.chars, { yPercent: 110, duration: 0.6, stagger: 0.02 }, "<0.15")
+        .from(
+          ".task-fade",
+          { opacity: 0, y: 12, duration: 0.5, stagger: 0.1, clearProps: "all" },
+          "-=0.3"
+        )
+        .from(
+          ".task-details-card",
+          { opacity: 0, x: 40, duration: 0.6, clearProps: "all" },
+          0.1
+        )
+        .from(
+          ".detail-row",
+          { opacity: 0, x: 20, duration: 0.4, stagger: 0.07, clearProps: "all" },
+          "<0.2"
+        )
+        .from(
+          ".detail-badge",
+          {
+            scale: 0,
+            duration: 0.5,
+            ease: "back.out(3)",
+            stagger: 0.1,
+            clearProps: "all",
+          },
+          "<0.1"
+        );
+    },
+    { scope: pageRef, dependencies: [loading, error, editing] }
+  );
 
   function getMemberName(userId) {
     const member = members.find((member) => member.id === userId);
@@ -128,7 +206,7 @@ function TaskPage() {
     currentMember && ["owner", "admin", "member"].includes(currentMember.role);
 
   return (
-    <div className="space-y-6">
+    <div ref={pageRef} className="space-y-6">
       <Link
         to={projectUrl}
         className="text-sm font-medium text-slate-500 hover:text-indigo-600"
@@ -139,7 +217,7 @@ function TaskPage() {
       {editing ? (
         <form
           onSubmit={handleSave}
-          className="max-w-3xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="edit-form max-w-3xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
         >
           <h1 className="text-lg font-semibold text-slate-900">Edit task</h1>
 
@@ -229,9 +307,9 @@ function TaskPage() {
         </form>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+          <section className="task-main-card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
             <div className="flex items-start justify-between gap-4">
-              <h1 className="text-2xl font-bold text-slate-900">
+              <h1 className="task-title text-2xl font-bold text-slate-900">
                 {task.title}
               </h1>
               {canEditTask && (
@@ -245,47 +323,47 @@ function TaskPage() {
               )}
             </div>
 
-            <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">
+            <h2 className="task-fade mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">
               Description
             </h2>
             {task.description ? (
-              <p className="mt-2 whitespace-pre-wrap text-slate-700">
+              <p className="task-fade mt-2 whitespace-pre-wrap text-slate-700">
                 {task.description}
               </p>
             ) : (
-              <p className="mt-2 italic text-slate-400">No description.</p>
+              <p className="task-fade mt-2 italic text-slate-400">No description.</p>
             )}
           </section>
 
-          <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <aside className="task-details-card h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
               Details
             </h2>
 
             <dl className="mt-4 space-y-4 text-sm">
-              <div className="flex items-center justify-between gap-4">
+              <div className="detail-row flex items-center justify-between gap-4">
                 <dt className="text-slate-500">Status</dt>
                 <dd>
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASSES[task.status]}`}
+                    className={`detail-badge inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASSES[task.status]}`}
                   >
                     {STATUS_LABELS[task.status]}
                   </span>
                 </dd>
               </div>
 
-              <div className="flex items-center justify-between gap-4">
+              <div className="detail-row flex items-center justify-between gap-4">
                 <dt className="text-slate-500">Priority</dt>
                 <dd>
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${PRIORITY_CLASSES[task.priority]}`}
+                    className={`detail-badge inline-block rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${PRIORITY_CLASSES[task.priority]}`}
                   >
                     {task.priority}
                   </span>
                 </dd>
               </div>
 
-              <div className="flex items-center justify-between gap-4">
+              <div className="detail-row flex items-center justify-between gap-4">
                 <dt className="text-slate-500">Assignee</dt>
                 <dd className="font-medium text-slate-900">
                   {task.assigned_to
@@ -294,7 +372,7 @@ function TaskPage() {
                 </dd>
               </div>
 
-              <div className="flex items-center justify-between gap-4">
+              <div className="detail-row flex items-center justify-between gap-4">
                 <dt className="text-slate-500">Due date</dt>
                 <dd className="font-medium text-slate-900">
                   {task.due_date
@@ -303,7 +381,7 @@ function TaskPage() {
                 </dd>
               </div>
 
-              <div className="flex items-center justify-between gap-4">
+              <div className="detail-row flex items-center justify-between gap-4">
                 <dt className="text-slate-500">Created by</dt>
                 <dd className="font-medium text-slate-900">
                   {getMemberName(task.created_by)}
