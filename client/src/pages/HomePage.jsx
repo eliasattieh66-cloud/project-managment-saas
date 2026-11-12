@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import gsap from "gsap";
+import { SplitText } from "gsap/SplitText";
+import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getWorkspaces, createWorkspace } from "../api/workspaces.js";
 
@@ -9,6 +12,12 @@ const ROLE_BADGE_CLASSES = {
   member: "bg-emerald-100 text-emerald-700",
   viewer: "bg-slate-100 text-slate-600",
 };
+
+gsap.registerPlugin(useGSAP, SplitText);
+
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 function HomePage() {
   const { user } = useAuth();
@@ -36,6 +45,106 @@ function HomePage() {
     loadWorkspaces();
   }, []);
 
+  const pageRef = useRef(null);
+
+  useGSAP(
+    () => {
+      if (prefersReducedMotion()) {
+        return;
+      }
+
+      const title = SplitText.create(".welcome-title", {
+        type: "words,chars",
+        mask: "chars",
+      });
+
+      const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      timeline
+        .from(title.chars, {
+          yPercent: 110,
+          duration: 0.7,
+          stagger: 0.025,
+        })
+        .from(
+          ".welcome-subtitle",
+          { opacity: 0, y: 12, duration: 0.5 },
+          "-=0.4"
+        )
+        .from(
+          ".create-card",
+          { opacity: 0, y: 30, scale: 0.97, duration: 0.6, clearProps: "all" },
+          "-=0.3"
+        );
+    },
+    { scope: pageRef }
+  );
+
+  const { contextSafe } = useGSAP(
+    () => {
+      if (loading || prefersReducedMotion()) {
+        return;
+      }
+
+      const timeline = gsap.timeline({ delay: 0.3 });
+
+      timeline
+        .from(".workspace-card", {
+          opacity: 0,
+          y: 60,
+          rotateX: -50,
+          scale: 0.9,
+          transformPerspective: 800,
+          transformOrigin: "50% 0%",
+          duration: 0.8,
+          ease: "back.out(1.6)",
+          stagger: 0.09,
+          clearProps: "all",
+        })
+        .from(
+          ".workspace-avatar",
+          {
+            scale: 0,
+            rotate: -180,
+            duration: 0.6,
+            ease: "back.out(2.5)",
+            stagger: 0.09,
+            clearProps: "all",
+          },
+          "<0.25"
+        );
+    },
+    { scope: pageRef, dependencies: [loading] }
+  );
+
+  const handleCardMove = contextSafe((event) => {
+    if (prefersReducedMotion()) {
+      return;
+    }
+
+    const card = event.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+
+    gsap.to(card, {
+      rotateY: x * 14,
+      rotateX: -y * 14,
+      transformPerspective: 700,
+      duration: 0.4,
+      ease: "power2.out",
+    });
+  });
+
+  const handleCardLeave = contextSafe((event) => {
+    gsap.to(event.currentTarget, {
+      rotateX: 0,
+      rotateY: 0,
+      duration: 0.8,
+      ease: "elastic.out(1, 0.4)",
+    });
+  });
+
   async function handleCreateWorkspace(event) {
     event.preventDefault();
     setCreateError("");
@@ -56,17 +165,17 @@ function HomePage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div ref={pageRef} className="space-y-10">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">
+        <h1 className="welcome-title text-3xl font-bold text-slate-900">
           Welcome, {user.name}
         </h1>
-        <p className="mt-1 text-slate-500">
+        <p className="welcome-subtitle mt-1 text-slate-500">
           Pick a workspace to continue, or create a new one.
         </p>
       </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="create-card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">
           Create a workspace
         </h2>
@@ -133,12 +242,14 @@ function HomePage() {
 
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {workspaces.map((workspace) => (
-            <li key={workspace.id}>
+            <li key={workspace.id} className="workspace-card">
               <Link
                 to={`/workspaces/${workspace.id}`}
-                className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
+                onMouseMove={handleCardMove}
+                onMouseLeave={handleCardLeave}
+                className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-[translate,box-shadow,border-color] hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-100"
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-lg font-bold text-indigo-700">
+                <span className="workspace-avatar flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-violet-500 text-lg font-bold text-white shadow-md shadow-indigo-500/30">
                   {workspace.name.charAt(0).toUpperCase()}
                 </span>
                 <div className="min-w-0">
