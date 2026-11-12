@@ -8,6 +8,18 @@ import {
 } from "../api/workspaces.js";
 import { getProjects, createProject } from "../api/projects.js";
 
+const ROLE_BADGE_CLASSES = {
+  owner: "bg-indigo-100 text-indigo-700",
+  admin: "bg-sky-100 text-sky-700",
+  member: "bg-emerald-100 text-emerald-700",
+  viewer: "bg-slate-100 text-slate-600",
+};
+
+const PROJECT_STATUS_CLASSES = {
+  active: "bg-emerald-100 text-emerald-700",
+  archived: "bg-slate-100 text-slate-600",
+};
+
 function WorkspacePage() {
   const { workspaceId } = useParams();
   const { user } = useAuth();
@@ -92,14 +104,21 @@ function WorkspacePage() {
   }
 
   if (loading) {
-    return <p>Loading workspace...</p>;
+    return <p className="text-sm text-slate-500">Loading workspace...</p>;
   }
 
   if (error) {
     return (
-      <div>
-        <p>{error}</p>
-        <Link to="/">Back to my workspaces</Link>
+      <div className="space-y-4">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+        <Link
+          to="/"
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          &larr; Back to my workspaces
+        </Link>
       </div>
     );
   }
@@ -111,105 +130,230 @@ function WorkspacePage() {
     currentMember && ["owner", "admin", "member"].includes(currentMember.role);
 
   return (
-    <div>
-      <Link to="/">Back to my workspaces</Link>
+    <div className="space-y-8">
+      <div>
+        <Link
+          to="/"
+          className="text-sm font-medium text-slate-500 hover:text-indigo-600"
+        >
+          &larr; My workspaces
+        </Link>
 
-      <h1>{workspace.name}</h1>
+        <div className="mt-3 flex items-center gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-xl font-bold text-indigo-700">
+            {workspace.name.charAt(0).toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <h1 className="truncate text-3xl font-bold text-slate-900">
+              {workspace.name}
+            </h1>
+            <p className="text-sm text-slate-500">
+              {projects.length} {projects.length === 1 ? "project" : "projects"}{" "}
+              &middot; {members.length}{" "}
+              {members.length === 1 ? "member" : "members"}
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <section>
-        <h2>Projects</h2>
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <section>
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">
+              Projects
+            </h2>
 
-        {projects.length === 0 && <p>No projects yet.</p>}
+            {projects.length === 0 && (
+              <div className="rounded-2xl border-2 border-dashed border-slate-300 p-10 text-center">
+                <p className="font-medium text-slate-700">No projects yet</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Projects you create will appear here.
+                </p>
+              </div>
+            )}
 
-        <ul>
-          {projects.map((project) => (
-            <li key={project.id}>
-              <Link to={`/workspaces/${workspaceId}/projects/${project.id}`}>
-                {project.name}
-              </Link>{" "}
-              ({project.status})
-              {project.description && <p>{project.description}</p>}
-            </li>
-          ))}
-        </ul>
-      </section>
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {projects.map((project) => (
+                <li key={project.id}>
+                  <Link
+                    to={`/workspaces/${workspaceId}/projects/${project.id}`}
+                    className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="truncate font-semibold text-slate-900 group-hover:text-indigo-700">
+                        {project.name}
+                      </p>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${PROJECT_STATUS_CLASSES[project.status]}`}
+                      >
+                        {project.status}
+                      </span>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-sm text-slate-500">
+                      {project.description || "No description."}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
 
-      {canCreateProjects && (
-        <section>
-          <h2>Create a project</h2>
+          {canCreateProjects && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Create a project
+              </h2>
 
-          <form onSubmit={handleCreateProject}>
-            <label htmlFor="project-name">Project name</label>
-            <input
-              id="project-name"
-              type="text"
-              value={projectName}
-              onChange={(event) => setProjectName(event.target.value)}
-              maxLength={150}
-              required
-            />
+              <form onSubmit={handleCreateProject} className="mt-4 space-y-4">
+                <div>
+                  <label
+                    htmlFor="project-name"
+                    className="mb-1.5 block text-sm font-medium text-slate-700"
+                  >
+                    Project name
+                  </label>
+                  <input
+                    id="project-name"
+                    type="text"
+                    value={projectName}
+                    onChange={(event) => setProjectName(event.target.value)}
+                    maxLength={150}
+                    required
+                    placeholder="e.g. Website redesign"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15"
+                  />
+                </div>
 
-            <label htmlFor="project-description">Description (optional)</label>
-            <textarea
-              id="project-description"
-              value={projectDescription}
-              onChange={(event) => setProjectDescription(event.target.value)}
-            />
+                <div>
+                  <label
+                    htmlFor="project-description"
+                    className="mb-1.5 block text-sm font-medium text-slate-700"
+                  >
+                    Description{" "}
+                    <span className="font-normal text-slate-400">(optional)</span>
+                  </label>
+                  <textarea
+                    id="project-description"
+                    value={projectDescription}
+                    onChange={(event) =>
+                      setProjectDescription(event.target.value)
+                    }
+                    rows={3}
+                    className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15"
+                  />
+                </div>
 
-            <button type="submit" disabled={creatingProject}>
-              {creatingProject ? "Creating..." : "Create project"}
-            </button>
-          </form>
+                {createProjectError && (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {createProjectError}
+                  </p>
+                )}
 
-          {createProjectError && <p>{createProjectError}</p>}
-        </section>
-      )}
+                <button
+                  type="submit"
+                  disabled={creatingProject}
+                  className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {creatingProject ? "Creating..." : "Create project"}
+                </button>
+              </form>
+            </section>
+          )}
+        </div>
 
-      <section>
-        <h2>Members</h2>
+        <aside className="space-y-6">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">Members</h2>
 
-        <ul>
-          {members.map((member) => (
-            <li key={member.id}>
-              {member.name} ({member.email}) - {member.role}
-            </li>
-          ))}
-        </ul>
-      </section>
+            <ul className="mt-4 divide-y divide-slate-100">
+              {members.map((member) => (
+                <li key={member.id} className="flex items-center gap-3 py-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
+                    {member.name.charAt(0).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-900">
+                      {member.name}
+                      {member.id === user.id && (
+                        <span className="font-normal text-slate-400"> (you)</span>
+                      )}
+                    </p>
+                    <p className="truncate text-xs text-slate-500">
+                      {member.email}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${ROLE_BADGE_CLASSES[member.role]}`}
+                  >
+                    {member.role}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
 
-      {canManageMembers && (
-        <section>
-          <h2>Add a member</h2>
+          {canManageMembers && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Add a member
+              </h2>
 
-          <form onSubmit={handleAddMember}>
-            <label htmlFor="member-email">Email</label>
-            <input
-              id="member-email"
-              type="email"
-              value={memberEmail}
-              onChange={(event) => setMemberEmail(event.target.value)}
-              required
-            />
+              <form onSubmit={handleAddMember} className="mt-4 space-y-4">
+                <div>
+                  <label
+                    htmlFor="member-email"
+                    className="mb-1.5 block text-sm font-medium text-slate-700"
+                  >
+                    Email
+                  </label>
+                  <input
+                    id="member-email"
+                    type="email"
+                    value={memberEmail}
+                    onChange={(event) => setMemberEmail(event.target.value)}
+                    required
+                    placeholder="teammate@example.com"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15"
+                  />
+                </div>
 
-            <label htmlFor="member-role">Role</label>
-            <select
-              id="member-role"
-              value={memberRole}
-              onChange={(event) => setMemberRole(event.target.value)}
-            >
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-              <option value="viewer">Viewer</option>
-            </select>
+                <div>
+                  <label
+                    htmlFor="member-role"
+                    className="mb-1.5 block text-sm font-medium text-slate-700"
+                  >
+                    Role
+                  </label>
+                  <select
+                    id="member-role"
+                    value={memberRole}
+                    onChange={(event) => setMemberRole(event.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15"
+                  >
+                    <option value="member">Member</option>
+                    <option value="admin">Admin</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                </div>
 
-            <button type="submit" disabled={adding}>
-              {adding ? "Adding..." : "Add member"}
-            </button>
-          </form>
+                {addError && (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {addError}
+                  </p>
+                )}
 
-          {addError && <p>{addError}</p>}
-        </section>
-      )}
+                <button
+                  type="submit"
+                  disabled={adding}
+                  className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {adding ? "Adding..." : "Add member"}
+                </button>
+              </form>
+            </section>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }

@@ -10,6 +10,23 @@ const STATUS_LABELS = {
   done: "Done",
 };
 
+const STATUS_CLASSES = {
+  todo: "bg-slate-100 text-slate-600",
+  in_progress: "bg-amber-100 text-amber-700",
+  done: "bg-emerald-100 text-emerald-700",
+};
+
+const PRIORITY_CLASSES = {
+  low: "bg-slate-100 text-slate-600",
+  medium: "bg-amber-100 text-amber-700",
+  high: "bg-red-100 text-red-700",
+};
+
+const INPUT_CLASSES =
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15";
+
+const LABEL_CLASSES = "mb-1.5 block text-sm font-medium text-slate-700";
+
 function TaskPage() {
   const { workspaceId, projectId, taskId } = useParams();
   const { user } = useAuth();
@@ -87,14 +104,21 @@ function TaskPage() {
   const projectUrl = `/workspaces/${workspaceId}/projects/${projectId}`;
 
   if (loading) {
-    return <p>Loading task...</p>;
+    return <p className="text-sm text-slate-500">Loading task...</p>;
   }
 
   if (error) {
     return (
-      <div>
-        <p>{error}</p>
-        <Link to={projectUrl}>Back to project</Link>
+      <div className="space-y-4">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+        <Link
+          to={projectUrl}
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          &larr; Back to project
+        </Link>
       </div>
     );
   }
@@ -104,89 +128,189 @@ function TaskPage() {
     currentMember && ["owner", "admin", "member"].includes(currentMember.role);
 
   return (
-    <div>
-      <Link to={projectUrl}>Back to project</Link>
+    <div className="space-y-6">
+      <Link
+        to={projectUrl}
+        className="text-sm font-medium text-slate-500 hover:text-indigo-600"
+      >
+        &larr; Back to project
+      </Link>
 
       {editing ? (
-        <form onSubmit={handleSave}>
-          <label htmlFor="edit-title">Title</label>
-          <input
-            id="edit-title"
-            type="text"
-            value={editTitle}
-            onChange={(event) => setEditTitle(event.target.value)}
-            maxLength={200}
-            required
-          />
+        <form
+          onSubmit={handleSave}
+          className="max-w-3xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+        >
+          <h1 className="text-lg font-semibold text-slate-900">Edit task</h1>
 
-          <label htmlFor="edit-description">Description (optional)</label>
-          <textarea
-            id="edit-description"
-            value={editDescription}
-            onChange={(event) => setEditDescription(event.target.value)}
-          />
+          <div>
+            <label htmlFor="edit-title" className={LABEL_CLASSES}>
+              Title
+            </label>
+            <input
+              id="edit-title"
+              type="text"
+              value={editTitle}
+              onChange={(event) => setEditTitle(event.target.value)}
+              maxLength={200}
+              required
+              className={INPUT_CLASSES}
+            />
+          </div>
 
-          <label htmlFor="edit-priority">Priority</label>
-          <select
-            id="edit-priority"
-            value={editPriority}
-            onChange={(event) => setEditPriority(event.target.value)}
-          >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="edit-priority" className={LABEL_CLASSES}>
+                Priority
+              </label>
+              <select
+                id="edit-priority"
+                value={editPriority}
+                onChange={(event) => setEditPriority(event.target.value)}
+                className={INPUT_CLASSES}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
 
-          <label htmlFor="edit-due-date">Due date (optional)</label>
-          <input
-            id="edit-due-date"
-            type="date"
-            value={editDueDate}
-            onChange={(event) => setEditDueDate(event.target.value)}
-          />
+            <div>
+              <label htmlFor="edit-due-date" className={LABEL_CLASSES}>
+                Due date
+              </label>
+              <input
+                id="edit-due-date"
+                type="date"
+                value={editDueDate}
+                onChange={(event) => setEditDueDate(event.target.value)}
+                className={INPUT_CLASSES}
+              />
+            </div>
+          </div>
 
-          <button type="submit" disabled={saving}>
-            {saving ? "Saving..." : "Save"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditing(false)}
-            disabled={saving}
-          >
-            Cancel
-          </button>
+          <div>
+            <label htmlFor="edit-description" className={LABEL_CLASSES}>
+              Description{" "}
+              <span className="font-normal text-slate-400">(optional)</span>
+            </label>
+            <textarea
+              id="edit-description"
+              value={editDescription}
+              onChange={(event) => setEditDescription(event.target.value)}
+              rows={5}
+              className={`${INPUT_CLASSES} resize-none`}
+            />
+          </div>
 
-          {editError && <p>{editError}</p>}
+          {editError && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {editError}
+            </p>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              disabled={saving}
+              className="rounded-lg border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancel
+            </button>
+          </div>
         </form>
       ) : (
-        <div>
-          <h1>{task.title}</h1>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+            <div className="flex items-start justify-between gap-4">
+              <h1 className="text-2xl font-bold text-slate-900">
+                {task.title}
+              </h1>
+              {canEditTask && (
+                <button
+                  type="button"
+                  onClick={startEditing}
+                  className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Edit task
+                </button>
+              )}
+            </div>
 
-          <p>Status: {STATUS_LABELS[task.status]}</p>
-          <p>Priority: {task.priority}</p>
-          <p>
-            Assigned to:{" "}
-            {task.assigned_to ? getMemberName(task.assigned_to) : "Unassigned"}
-          </p>
-          <p>Created by: {getMemberName(task.created_by)}</p>
-          <p>
-            Due date:{" "}
-            {task.due_date
-              ? new Date(task.due_date).toLocaleDateString()
-              : "No due date"}
-          </p>
+            <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">
+              Description
+            </h2>
+            {task.description ? (
+              <p className="mt-2 whitespace-pre-wrap text-slate-700">
+                {task.description}
+              </p>
+            ) : (
+              <p className="mt-2 italic text-slate-400">No description.</p>
+            )}
+          </section>
 
-          {task.description ? (
-            <p>{task.description}</p>
-          ) : (
-            <p>No description.</p>
-          )}
+          <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+              Details
+            </h2>
 
-          {canEditTask && (
-            <button type="button" onClick={startEditing}>
-              Edit task
-            </button>
-          )}
+            <dl className="mt-4 space-y-4 text-sm">
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-slate-500">Status</dt>
+                <dd>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASSES[task.status]}`}
+                  >
+                    {STATUS_LABELS[task.status]}
+                  </span>
+                </dd>
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-slate-500">Priority</dt>
+                <dd>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${PRIORITY_CLASSES[task.priority]}`}
+                  >
+                    {task.priority}
+                  </span>
+                </dd>
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-slate-500">Assignee</dt>
+                <dd className="font-medium text-slate-900">
+                  {task.assigned_to
+                    ? getMemberName(task.assigned_to)
+                    : "Unassigned"}
+                </dd>
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-slate-500">Due date</dt>
+                <dd className="font-medium text-slate-900">
+                  {task.due_date
+                    ? new Date(task.due_date).toLocaleDateString()
+                    : "No due date"}
+                </dd>
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-slate-500">Created by</dt>
+                <dd className="font-medium text-slate-900">
+                  {getMemberName(task.created_by)}
+                </dd>
+              </div>
+            </dl>
+          </aside>
         </div>
       )}
     </div>

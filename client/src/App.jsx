@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Layout from "./components/Layout.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
@@ -14,40 +15,23 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
 
       <Route
-        path="/"
         element={
           <ProtectedRoute>
-            <HomePage />
+            <Layout />
           </ProtectedRoute>
         }
-      />
-
-      <Route
-        path="/workspaces/:workspaceId"
-        element={
-          <ProtectedRoute>
-            <WorkspacePage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/workspaces/:workspaceId/projects/:projectId"
-        element={
-          <ProtectedRoute>
-            <ProjectPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/workspaces/:workspaceId/projects/:projectId/tasks/:taskId"
-        element={
-          <ProtectedRoute>
-            <TaskPage />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route path="/" element={<HomePage />} />
+        <Route path="/workspaces/:workspaceId" element={<WorkspacePage />} />
+        <Route
+          path="/workspaces/:workspaceId/projects/:projectId"
+          element={<ProjectPage />}
+        />
+        <Route
+          path="/workspaces/:workspaceId/projects/:projectId/tasks/:taskId"
+          element={<TaskPage />}
+        />
+      </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
