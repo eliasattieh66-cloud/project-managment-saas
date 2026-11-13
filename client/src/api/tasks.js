@@ -51,3 +51,9 @@ export async function assignTask(workspaceId, projectId, taskId, userId) {
   );
   return data.data.task;
 }
+
+export async function deleteTask(workspaceId, projectId, taskId) {
+  await apiRequest(`${tasksUrl(workspaceId, projectId)}/${taskId}`, {
+    method: "DELETE",
+  });
+}

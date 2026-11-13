@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useConfirm } from "../context/confirmContext.js";
 import { getWorkspaceMembers } from "../api/workspaces.js";
-import { getTask, updateTask } from "../api/tasks.js";
+import { getTask, updateTask, deleteTask } from "../api/tasks.js";
 import TaskComments from "../components/TaskComments.jsx";
 import TaskAttachments from "../components/TaskAttachments.jsx";
 
@@ -42,6 +43,8 @@ function prefersReducedMotion() {
 function TaskPage() {
   const { workspaceId, projectId, taskId } = useParams();
   const { user } = useAuth();
+  const confirm = useConfirm();
+  const navigate = useNavigate();
 
   const [task, setTask] = useState(null);
   const [members, setMembers] = useState([]);
@@ -55,6 +58,9 @@ function TaskPage() {
   const [editDueDate, setEditDueDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState("");
+
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     async function loadTask() {
@@ -183,6 +189,28 @@ function TaskPage() {
 
   const projectUrl = `/workspaces/${workspaceId}/projects/${projectId}`;
 
+  async function handleDelete() {
+    const confirmed = await confirm({
+      title: "Delete this task?",
+      message: `"${task.title}", its comments and its files will be permanently removed.`,
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleteError("");
+    setDeleting(true);
+
+    try {
+      await deleteTask(workspaceId, projectId, taskId);
+      navigate(projectUrl, { replace: true });
+    } catch (error) {
+      setDeleteError(error.message);
+      setDeleting(false);
+    }
+  }
+
   if (loading) {
     return <p className="text-sm text-slate-500">Loading task...</p>;
   }
@@ -208,6 +236,8 @@ function TaskPage() {
     currentMember && ["owner", "admin", "member"].includes(currentMember.role);
   const canManageWorkspace =
     currentMember && ["owner", "admin"].includes(currentMember.role);
+  const canDeleteTask =
+    canManageWorkspace || (canEditTask && task.created_by === user.id);
 
   return (
     <div ref={pageRef} className="space-y-6">
@@ -317,16 +347,34 @@ function TaskPage() {
               <h1 className="task-title text-2xl font-bold text-slate-900">
                 {task.title}
               </h1>
-              {canEditTask && (
-                <button
-                  type="button"
-                  onClick={startEditing}
-                  className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Edit task
-                </button>
-              )}
+              <div className="flex shrink-0 gap-2">
+                {canEditTask && (
+                  <button
+                    type="button"
+                    onClick={startEditing}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Edit task
+                  </button>
+                )}
+                {canDeleteTask && (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {deleting ? "Deleting..." : "Delete"}
+                  </button>
+                )}
+              </div>
             </div>
+
+            {deleteError && (
+              <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {deleteError}
+              </p>
+            )}
 
             <h2 className="task-fade mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">
               Description
