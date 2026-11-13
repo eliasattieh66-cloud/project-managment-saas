@@ -156,3 +156,17 @@ export async function removeMemberAndUnassignTasks({ workspaceId, userId }) {
     client.release();
   }
 }
+
+export async function updateMemberRole({ workspaceId, userId, role }) {
+  const result = await pool.query(
+    `
+    UPDATE workspace_members
+    SET role = $1, updated_at = NOW()
+    WHERE workspace_id = $2 AND user_id = $3
+    RETURNING id, workspace_id, user_id, role, created_at, updated_at
+    `,
+    [role, workspaceId, userId]
+  );
+
+  return result.rows[0];
+}

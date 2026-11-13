@@ -8,6 +8,7 @@ import {
   listMembersController,
   getWorkspaceController,
   removeMemberController,
+  updateMemberRoleController,
 } from "./workspace.controller.js";
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.post("/:workspaceId/members", authenticate, asyncHandler(addMemberControl
 router.get("/:workspaceId/members", authenticate, asyncHandler(listMembersController));
 router.get("/:workspaceId", authenticate, asyncHandler(getWorkspaceController));
 router.delete("/:workspaceId/members/:userId", authenticate, asyncHandler(removeMemberController));
+router.patch("/:workspaceId/members/:userId", authenticate, asyncHandler(updateMemberRoleController));
 
 export default router;

@@ -6,6 +6,7 @@ import {
   findMembersByWorkspaceId,
   findWorkspaceById,
   removeMemberAndUnassignTasks,
+  updateMemberRole,
 } from "./workspace.repository.js";
 import { findUserByEmail } from "../auth/auth.repository.js";
 import { AppError } from "../../utils/AppError.js";
@@ -106,4 +107,40 @@ export async function removeMemberFromWorkspace({ workspaceId, requesterId, user
   }
 
   await removeMemberAndUnassignTasks({ workspaceId, userId });
+}
+
+export async function changeMemberRole({ workspaceId, requesterId, userId, role }) {
+  const requesterMembership = await findMembership(workspaceId, requesterId);
+
+  if (!requesterMembership) {
+    throw new AppError("Workspace not found.", 404);
+  }
+
+  if (!["owner", "admin"].includes(requesterMembership.role)) {
+    throw new AppError("You do not have permission to change member roles in this workspace.", 403);
+  }
+
+  if (String(userId) === String(requesterId)) {
+    throw new AppError("You cannot change your own role.", 400);
+  }
+
+  const targetMembership = await findMembership(workspaceId, userId);
+
+  if (!targetMembership) {
+    throw new AppError("Member not found.", 404);
+  }
+
+  if (targetMembership.role === "owner") {
+    throw new AppError("The workspace owner's role cannot be changed.", 403);
+  }
+
+  const involvesAdmin = targetMembership.role === "admin" || role === "admin";
+
+  if (involvesAdmin && requesterMembership.role !== "owner") {
+    throw new AppError("Only the workspace owner can grant or change the admin role.", 403);
+  }
+
+  const member = await updateMemberRole({ workspaceId, userId, role });
+
+  return member;
 }

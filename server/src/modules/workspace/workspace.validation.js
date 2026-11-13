@@ -55,3 +55,20 @@ export function validateAddMemberInput({ email, role }) {
     role: normalizedRole,
   };
 }
+export function validateUpdateMemberRoleInput({ role }) {
+  const errors = {};
+
+  if (role === undefined || role === null) {
+    errors.role = "Role is required.";
+  } else if (typeof role !== "string" || !ALLOWED_MEMBER_ROLES.includes(role)) {
+    errors.role = `Role must be one of: ${ALLOWED_MEMBER_ROLES.join(", ")}.`;
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw new AppError("Validation failed.", 400, errors);
+  }
+
+  return {
+    role,
+  };
+}

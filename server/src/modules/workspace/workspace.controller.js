@@ -1,6 +1,7 @@
 import {
   validateCreateWorkspaceInput,
   validateAddMemberInput,
+  validateUpdateMemberRoleInput,
 } from "./workspace.validation.js";
 import {
   createWorkspace,
@@ -9,6 +10,7 @@ import {
   listMembersForWorkspace,
   getWorkspaceById,
   removeMemberFromWorkspace,
+  changeMemberRole,
 } from "./workspace.service.js";
 
 export async function createWorkspaceController(req, res) {
@@ -93,5 +95,23 @@ export async function removeMemberController(req, res) {
   res.status(200).json({
     status: "success",
     message: "Member removed successfully.",
+  });
+}
+
+export async function updateMemberRoleController(req, res) {
+  const validatedData = validateUpdateMemberRoleInput(req.body);
+
+  const member = await changeMemberRole({
+    workspaceId: req.params.workspaceId,
+    requesterId: req.user.id,
+    userId: req.params.userId,
+    role: validatedData.role,
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      member,
+    },
   });
 }
