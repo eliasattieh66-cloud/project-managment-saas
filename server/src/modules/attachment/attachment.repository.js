@@ -66,3 +66,13 @@ export async function findAttachmentById(attachmentId, taskId) {
 
   return result.rows[0] || null;
 }
+
+export async function deleteAttachment({ attachmentId, taskId }) {
+  await pool.query(
+    `
+    DELETE FROM attachments
+    WHERE id = $1 AND task_id = $2
+    `,
+    [attachmentId, taskId]
+  );
+}

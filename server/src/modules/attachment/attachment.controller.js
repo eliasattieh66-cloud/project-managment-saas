@@ -3,6 +3,7 @@ import {
   addAttachmentToTask,
   listAttachmentsForTask,
   getAttachmentForDownload,
+  deleteAttachmentFromTask,
 } from "./attachment.service.js";
 import { UPLOAD_DIRECTORY } from "../../middlewares/upload.middleware.js";
 
@@ -51,4 +52,19 @@ export async function downloadAttachmentController(req, res) {
   const filePath = path.join(UPLOAD_DIRECTORY, path.basename(attachment.file_url));
 
   res.download(filePath, attachment.file_name);
+}
+
+export async function deleteAttachmentController(req, res) {
+  await deleteAttachmentFromTask({
+    workspaceId: req.params.workspaceId,
+    projectId: req.params.projectId,
+    taskId: req.params.taskId,
+    attachmentId: req.params.attachmentId,
+    requesterId: req.user.id,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "Attachment deleted successfully.",
+  });
 }
