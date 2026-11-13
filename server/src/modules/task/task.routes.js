@@ -1,7 +1,7 @@
 import express from "express";
 import { authenticate } from "../../middlewares/auth.middleware.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { createTaskController, listTasksController,getTaskController ,assignTaskController,updateTaskStatusController,updateTaskController} from "./task.controller.js";
+import { createTaskController, listTasksController,getTaskController ,assignTaskController,updateTaskStatusController,updateTaskController,deleteTaskController} from "./task.controller.js";
 
 const router = express.Router({ mergeParams: true });
 
@@ -11,4 +11,5 @@ router.get("/:taskId", authenticate, asyncHandler(getTaskController));
 router.patch("/:taskId/assign", authenticate, asyncHandler(assignTaskController));
 router.patch("/:taskId/status", authenticate, asyncHandler(updateTaskStatusController));
 router.patch("/:taskId", authenticate, asyncHandler(updateTaskController));
+router.delete("/:taskId", authenticate, asyncHandler(deleteTaskController));
 export default router;

@@ -6,6 +6,7 @@ import {
   assignTaskInProject,
   updateTaskStatusInProject,
   updateTaskInProject,
+  deleteTaskFromProject,
 } from "./task.service.js";
 
 export async function createTaskController(req, res) {
@@ -111,5 +112,19 @@ export async function updateTaskController(req, res) {
     data: {
       task,
     },
+  });
+}
+
+export async function deleteTaskController(req, res) {
+  await deleteTaskFromProject({
+    workspaceId: req.params.workspaceId,
+    projectId: req.params.projectId,
+    taskId: req.params.taskId,
+    requesterId: req.user.id,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "Task deleted successfully.",
   });
 }

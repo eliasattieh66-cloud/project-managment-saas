@@ -1,3 +1,5 @@
+import fs from "fs/promises";
+import path from "path";
 import {
   createTask,
   findTasksByProjectId,
@@ -5,9 +7,12 @@ import {
   assignTask,
   updateTaskStatus,
   updateTask,
+  deleteTask,
 } from "./task.repository.js";
 import { findMembership } from "../workspace/workspace.repository.js";
 import { findProjectById } from "../project/project.repository.js";
+import { findAttachmentsByTaskId } from "../attachment/attachment.repository.js";
+import { UPLOAD_DIRECTORY } from "../../middlewares/upload.middleware.js";
 import { AppError } from "../../utils/AppError.js";
 
 export async function createTaskInProject({
@@ -183,4 +188,49 @@ export async function getTaskById({ workspaceId, projectId, taskId, requesterId 
   }
 
   return task;
+}
+
+export async function deleteTaskFromProject({ workspaceId, projectId, taskId, requesterId }) {
+  const requesterMembership = await findMembership(workspaceId, requesterId);
+
+  if (!requesterMembership) {
+    throw new AppError("Workspace not found.", 404);
+  }
+
+  const project = await findProjectById(projectId, workspaceId);
+
+  if (!project) {
+    throw new AppError("Project not found.", 404);
+  }
+
+  const task = await findTaskById(taskId, projectId);
+
+  if (!task) {
+    throw new AppError("Task not found.", 404);
+  }
+
+  const isCreator =
+    String(task.created_by) === String(requesterId) &&
+    requesterMembership.role !== "viewer";
+  const isManager = ["owner", "admin"].includes(requesterMembership.role);
+
+  if (!isCreator && !isManager) {
+    throw new AppError("You can only delete tasks you created.", 403);
+  }
+
+  const attachments = await findAttachmentsByTaskId(taskId);
+
+  await deleteTask({ taskId, projectId });
+
+  for (const attachment of attachments) {
+    const filePath = path.join(UPLOAD_DIRECTORY, path.basename(attachment.file_url));
+
+    try {
+      await fs.unlink(filePath);
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        console.error(`Could not delete file ${filePath}:`, error);
+      }
+    }
+  }
 }

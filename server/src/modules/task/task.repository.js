@@ -147,3 +147,13 @@ export async function updateTask({ taskId, projectId, title, description, priori
 
   return result.rows[0];
 }
+
+export async function deleteTask({ taskId, projectId }) {
+  await pool.query(
+    `
+    DELETE FROM tasks
+    WHERE id = $1 AND project_id = $2
+    `,
+    [taskId, projectId]
+  );
+}
