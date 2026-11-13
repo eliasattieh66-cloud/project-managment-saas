@@ -6,6 +6,7 @@ import {
   getAttachments,
   uploadAttachment,
   downloadAttachment,
+  deleteAttachment,
 } from "../api/attachments.js";
 
 gsap.registerPlugin(useGSAP);
@@ -35,7 +36,7 @@ function getFileLabel(fileName) {
   return extension.length > 0 && extension.length <= 4 ? extension : "FILE";
 }
 
-function TaskAttachments({ workspaceId, projectId, taskId }) {
+function TaskAttachments({ workspaceId, projectId, taskId, canDeleteAny }) {
   const { user } = useAuth();
 
   const [attachments, setAttachments] = useState([]);
@@ -48,6 +49,9 @@ function TaskAttachments({ workspaceId, projectId, taskId }) {
 
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadError, setDownloadError] = useState("");
+
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
 
   const [newAttachmentId, setNewAttachmentId] = useState(null);
 
@@ -90,7 +94,7 @@ function TaskAttachments({ workspaceId, projectId, taskId }) {
     { scope: sectionRef, dependencies: [loading] }
   );
 
-  useGSAP(
+  const { contextSafe } = useGSAP(
     () => {
       if (!newAttachmentId || prefersReducedMotion()) {
         return;
@@ -173,6 +177,46 @@ function TaskAttachments({ workspaceId, projectId, taskId }) {
     }
   }
 
+  const handleDelete = contextSafe(async (attachment, element) => {
+    if (!window.confirm(`Delete "${attachment.file_name}"?`)) {
+      return;
+    }
+
+    setDeleteError("");
+    setDeletingId(attachment.id);
+
+    try {
+      await deleteAttachment(workspaceId, projectId, taskId, attachment.id);
+    } catch (error) {
+      setDeleteError(error.message);
+      setDeletingId(null);
+      return;
+    }
+
+    function removeFromList() {
+      setAttachments((currentAttachments) =>
+        currentAttachments.filter((item) => item.id !== attachment.id)
+      );
+      setDeletingId(null);
+    }
+
+    if (prefersReducedMotion()) {
+      removeFromList();
+      return;
+    }
+
+    gsap.to(element, {
+      opacity: 0,
+      x: 40,
+      height: 0,
+      paddingTop: 0,
+      paddingBottom: 0,
+      duration: 0.4,
+      ease: "power2.in",
+      onComplete: removeFromList,
+    });
+  });
+
   return (
     <section
       ref={sectionRef}
@@ -230,7 +274,7 @@ function TaskAttachments({ workspaceId, projectId, taskId }) {
         <p className="mt-4 text-sm text-slate-500">Loading attachments...</p>
       )}
 
-      {[error, uploadError, downloadError].filter(Boolean).map((message) => (
+      {[error, uploadError, downloadError, deleteError].filter(Boolean).map((message) => (
         <p
           key={message}
           className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
@@ -245,7 +289,7 @@ function TaskAttachments({ workspaceId, projectId, taskId }) {
             <li
               key={attachment.id}
               data-attachment-id={attachment.id}
-              className="attachment-item flex items-center gap-3 py-3"
+              className="attachment-item flex items-center gap-3 overflow-hidden py-3"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-[10px] font-bold text-indigo-600">
                 {getFileLabel(attachment.file_name)}
@@ -270,6 +314,20 @@ function TaskAttachments({ workspaceId, projectId, taskId }) {
               >
                 {downloadingId === attachment.id ? "Downloading..." : "Download"}
               </button>
+
+              {(canDeleteAny ||
+                String(attachment.uploaded_by) === String(user.id)) && (
+                <button
+                  type="button"
+                  onClick={(event) =>
+                    handleDelete(attachment, event.currentTarget.closest("li"))
+                  }
+                  disabled={deletingId === attachment.id}
+                  className="shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {deletingId === attachment.id ? "Deleting..." : "Delete"}
+                </button>
+              )}
             </li>
           ))}
         </ul>

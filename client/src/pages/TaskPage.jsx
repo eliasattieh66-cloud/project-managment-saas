@@ -206,6 +206,8 @@ function TaskPage() {
   const currentMember = members.find((member) => member.id === user.id);
   const canEditTask =
     currentMember && ["owner", "admin", "member"].includes(currentMember.role);
+  const canManageWorkspace =
+    currentMember && ["owner", "admin"].includes(currentMember.role);
 
   return (
     <div ref={pageRef} className="space-y-6">
@@ -342,6 +344,7 @@ function TaskPage() {
             workspaceId={workspaceId}
             projectId={projectId}
             taskId={taskId}
+            canDeleteAny={canManageWorkspace}
           />
 
           <TaskComments

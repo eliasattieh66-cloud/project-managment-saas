@@ -20,6 +20,20 @@ export async function uploadAttachment(workspaceId, projectId, taskId, file) {
   return data.data.attachment;
 }
 
+export async function deleteAttachment(
+  workspaceId,
+  projectId,
+  taskId,
+  attachmentId
+) {
+  await apiRequest(
+    `${attachmentsUrl(workspaceId, projectId, taskId)}/${attachmentId}`,
+    {
+      method: "DELETE",
+    }
+  );
+}
+
 export async function downloadAttachment(
   workspaceId,
   projectId,
