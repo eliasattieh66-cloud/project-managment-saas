@@ -10,6 +10,7 @@ import {
   getWorkspaceMembers,
   addWorkspaceMember,
   removeWorkspaceMember,
+  updateMemberRole,
 } from "../api/workspaces.js";
 import { getProjects, createProject } from "../api/projects.js";
 
@@ -50,6 +51,9 @@ function WorkspacePage() {
 
   const [removingId, setRemovingId] = useState(null);
   const [removeError, setRemoveError] = useState("");
+
+  const [changingRoleId, setChangingRoleId] = useState(null);
+  const [roleError, setRoleError] = useState("");
 
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
@@ -190,6 +194,53 @@ function WorkspacePage() {
       ease: "elastic.out(1, 0.4)",
     });
   });
+
+  const flashRow = contextSafe((element) => {
+    if (prefersReducedMotion()) {
+      return;
+    }
+
+    gsap.fromTo(
+      element,
+      { backgroundColor: "#eef2ff" },
+      { backgroundColor: "rgba(238, 242, 255, 0)", duration: 1.2, ease: "power2.out", clearProps: "backgroundColor" }
+    );
+  });
+
+  async function handleRoleChange(member, newRole, element) {
+    if (newRole === member.role) {
+      return;
+    }
+
+    if (newRole === "admin") {
+      const confirmed = await confirm({
+        title: `Make ${member.name} an admin?`,
+        message: "Admins can add and remove members and manage everything in this workspace.",
+        confirmLabel: "Make admin",
+      });
+
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    setRoleError("");
+    setChangingRoleId(member.id);
+
+    try {
+      const updatedMember = await updateMemberRole(workspaceId, member.id, newRole);
+      setMembers((currentMembers) =>
+        currentMembers.map((item) =>
+          item.id === member.id ? { ...item, role: updatedMember.role } : item
+        )
+      );
+      flashRow(element);
+    } catch (error) {
+      setRoleError(error.message);
+    } finally {
+      setChangingRoleId(null);
+    }
+  }
 
   const handleRemoveMember = contextSafe(async (member, element) => {
     const confirmed = await confirm({
@@ -452,11 +503,14 @@ function WorkspacePage() {
           <section className="side-card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Members</h2>
 
-            {removeError && (
-              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {removeError}
+            {[removeError, roleError].filter(Boolean).map((message) => (
+              <p
+                key={message}
+                className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+              >
+                {message}
               </p>
-            )}
+            ))}
 
             <ul className="mt-4 divide-y divide-slate-100">
               {members.map((member) => (
@@ -487,11 +541,33 @@ function WorkspacePage() {
                       </button>
                     )}
                   </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${ROLE_BADGE_CLASSES[member.role]}`}
-                  >
-                    {member.role}
-                  </span>
+                  {canRemoveMember(member) ? (
+                    <select
+                      aria-label={`Role of ${member.name}`}
+                      value={member.role}
+                      onChange={(event) =>
+                        handleRoleChange(
+                          member,
+                          event.target.value,
+                          event.currentTarget.closest("li")
+                        )
+                      }
+                      disabled={changingRoleId === member.id}
+                      className={`shrink-0 cursor-pointer rounded-full border-0 px-2 py-0.5 text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-wait disabled:opacity-60 ${ROLE_BADGE_CLASSES[member.role]}`}
+                    >
+                      {currentMember.role === "owner" && (
+                        <option value="admin">Admin</option>
+                      )}
+                      <option value="member">Member</option>
+                      <option value="viewer">Viewer</option>
+                    </select>
+                  ) : (
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${ROLE_BADGE_CLASSES[member.role]}`}
+                    >
+                      {member.role}
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
