@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useConfirm } from "../context/confirmContext.js";
 import {
   getAttachments,
   uploadAttachment,
@@ -38,6 +39,7 @@ function getFileLabel(fileName) {
 
 function TaskAttachments({ workspaceId, projectId, taskId, canDeleteAny }) {
   const { user } = useAuth();
+  const confirm = useConfirm();
 
   const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -178,7 +180,12 @@ function TaskAttachments({ workspaceId, projectId, taskId, canDeleteAny }) {
   }
 
   const handleDelete = contextSafe(async (attachment, element) => {
-    if (!window.confirm(`Delete "${attachment.file_name}"?`)) {
+    const confirmed = await confirm({
+      title: "Delete this file?",
+      message: `"${attachment.file_name}" will be permanently removed.`,
+    });
+
+    if (!confirmed) {
       return;
     }
 

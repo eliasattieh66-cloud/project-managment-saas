@@ -5,6 +5,7 @@ import { SplitText } from "gsap/SplitText";
 import { Flip } from "gsap/Flip";
 import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useConfirm } from "../context/confirmContext.js";
 import { getWorkspaceMembers } from "../api/workspaces.js";
 import { getProject, updateProject, archiveProject } from "../api/projects.js";
 import {
@@ -46,6 +47,7 @@ function prefersReducedMotion() {
 function ProjectPage() {
   const { workspaceId, projectId } = useParams();
   const { user } = useAuth();
+  const confirm = useConfirm();
 
   const [project, setProject] = useState(null);
   const [members, setMembers] = useState([]);
@@ -222,9 +224,11 @@ function ProjectPage() {
   }
 
   async function handleArchive() {
-    const confirmed = window.confirm(
-      `Are you sure you want to archive "${project.name}"?`
-    );
+    const confirmed = await confirm({
+      title: "Archive this project?",
+      message: `"${project.name}" will be marked as archived.`,
+      confirmLabel: "Archive",
+    });
 
     if (!confirmed) {
       return;

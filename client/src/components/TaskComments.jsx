@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useConfirm } from "../context/confirmContext.js";
 import {
   getComments,
   addComment,
@@ -27,6 +28,7 @@ function formatDate(value) {
 
 function TaskComments({ workspaceId, projectId, taskId }) {
   const { user } = useAuth();
+  const confirm = useConfirm();
 
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -159,7 +161,12 @@ function TaskComments({ workspaceId, projectId, taskId }) {
   }
 
   const handleDelete = contextSafe(async (comment, element) => {
-    if (!window.confirm("Delete this comment?")) {
+    const confirmed = await confirm({
+      title: "Delete this comment?",
+      message: "This comment will be permanently removed.",
+    });
+
+    if (!confirmed) {
       return;
     }
 
