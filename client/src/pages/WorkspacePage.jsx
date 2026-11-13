@@ -11,6 +11,7 @@ import {
   addWorkspaceMember,
   removeWorkspaceMember,
   updateMemberRole,
+  renameWorkspace,
 } from "../api/workspaces.js";
 import { getProjects, createProject } from "../api/projects.js";
 
@@ -55,6 +56,12 @@ function WorkspacePage() {
   const [changingRoleId, setChangingRoleId] = useState(null);
   const [roleError, setRoleError] = useState("");
 
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [renameError, setRenameError] = useState("");
+  const [renameCount, setRenameCount] = useState(0);
+
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [creatingProject, setCreatingProject] = useState(false);
@@ -97,7 +104,10 @@ function WorkspacePage() {
         mask: "chars",
       });
 
-      const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
+      const timeline = gsap.timeline({
+        defaults: { ease: "power3.out" },
+        onComplete: () => title.revert(),
+      });
 
       timeline
         .from(".workspace-header-avatar", {
@@ -206,6 +216,57 @@ function WorkspacePage() {
       { backgroundColor: "rgba(238, 242, 255, 0)", duration: 1.2, ease: "power2.out", clearProps: "backgroundColor" }
     );
   });
+
+  useGSAP(
+    () => {
+      if (renameCount === 0 || prefersReducedMotion()) {
+        return;
+      }
+
+      const title = SplitText.create(".workspace-title", {
+        type: "words,chars",
+        mask: "chars",
+      });
+
+      gsap
+        .timeline({ onComplete: () => title.revert() })
+        .from(title.chars, {
+          yPercent: 110,
+          duration: 0.6,
+          ease: "power3.out",
+          stagger: 0.025,
+        })
+        .from(
+          ".workspace-header-avatar",
+          { rotate: -180, scale: 0.5, duration: 0.6, ease: "back.out(2.5)", clearProps: "all" },
+          "<"
+        );
+    },
+    { scope: pageRef, dependencies: [renameCount] }
+  );
+
+  function startRenaming() {
+    setNameDraft(workspace.name);
+    setRenameError("");
+    setRenaming(true);
+  }
+
+  async function handleRename(event) {
+    event.preventDefault();
+    setRenameError("");
+    setSavingName(true);
+
+    try {
+      const updatedWorkspace = await renameWorkspace(workspaceId, nameDraft);
+      setWorkspace(updatedWorkspace);
+      setRenaming(false);
+      setRenameCount((count) => count + 1);
+    } catch (error) {
+      setRenameError(error.message);
+    } finally {
+      setSavingName(false);
+    }
+  }
 
   async function handleRoleChange(member, newRole, element) {
     if (newRole === member.role) {
@@ -379,10 +440,63 @@ function WorkspacePage() {
           <span className="workspace-header-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-violet-500 text-xl font-bold text-white shadow-md shadow-indigo-500/30">
             {workspace.name.charAt(0).toUpperCase()}
           </span>
-          <div className="min-w-0">
-            <h1 className="workspace-title truncate text-3xl font-bold text-slate-900">
-              {workspace.name}
-            </h1>
+          <div className="min-w-0 flex-1">
+            {renaming ? (
+              <form
+                onSubmit={handleRename}
+                className="flex flex-col gap-2 sm:flex-row sm:items-center"
+              >
+                <input
+                  type="text"
+                  aria-label="Workspace name"
+                  value={nameDraft}
+                  onChange={(event) => setNameDraft(event.target.value)}
+                  maxLength={100}
+                  required
+                  autoFocus
+                  className="w-full max-w-md rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xl font-bold text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={savingName}
+                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingName ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRenaming(false)}
+                    disabled={savingName}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex items-center gap-3">
+                <h1 className="workspace-title truncate text-3xl font-bold text-slate-900">
+                  {workspace.name}
+                </h1>
+                {canManageMembers && (
+                  <button
+                    type="button"
+                    onClick={startRenaming}
+                    className="shrink-0 rounded-lg px-2 py-1 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-100 hover:text-indigo-600"
+                  >
+                    Rename
+                  </button>
+                )}
+              </div>
+            )}
+
+            {renameError && (
+              <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {renameError}
+              </p>
+            )}
+
             <p className="workspace-summary text-sm text-slate-500">
               {projects.length} {projects.length === 1 ? "project" : "projects"}{" "}
               &middot; {members.length}{" "}

@@ -44,3 +44,11 @@ export async function updateMemberRole(workspaceId, userId, role) {
   });
   return data.data.member;
 }
+
+export async function renameWorkspace(workspaceId, name) {
+  const data = await apiRequest(`/workspaces/${workspaceId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+  return data.data.workspace;
+}
