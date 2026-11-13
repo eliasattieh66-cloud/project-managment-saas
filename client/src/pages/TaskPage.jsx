@@ -6,6 +6,7 @@ import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getWorkspaceMembers } from "../api/workspaces.js";
 import { getTask, updateTask } from "../api/tasks.js";
+import TaskComments from "../components/TaskComments.jsx";
 
 const STATUS_LABELS = {
   todo: "To do",
@@ -307,7 +308,8 @@ function TaskPage() {
         </form>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
-          <section className="task-main-card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+          <div className="space-y-6 lg:col-span-2">
+          <section className="task-main-card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <h1 className="task-title text-2xl font-bold text-slate-900">
                 {task.title}
@@ -334,6 +336,13 @@ function TaskPage() {
               <p className="task-fade mt-2 italic text-slate-400">No description.</p>
             )}
           </section>
+
+          <TaskComments
+            workspaceId={workspaceId}
+            projectId={projectId}
+            taskId={taskId}
+          />
+          </div>
 
           <aside className="task-details-card h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
