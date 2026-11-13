@@ -5,6 +5,7 @@ import {
   addMember,
   findMembersByWorkspaceId,
   findWorkspaceById,
+  removeMemberAndUnassignTasks,
 } from "./workspace.repository.js";
 import { findUserByEmail } from "../auth/auth.repository.js";
 import { AppError } from "../../utils/AppError.js";
@@ -73,4 +74,36 @@ export async function getWorkspaceById({ workspaceId, requesterId }) {
   const workspace = await findWorkspaceById(workspaceId);
 
   return workspace;
+}
+
+export async function removeMemberFromWorkspace({ workspaceId, requesterId, userId }) {
+  const requesterMembership = await findMembership(workspaceId, requesterId);
+
+  if (!requesterMembership) {
+    throw new AppError("Workspace not found.", 404);
+  }
+
+  if (!["owner", "admin"].includes(requesterMembership.role)) {
+    throw new AppError("You do not have permission to remove members from this workspace.", 403);
+  }
+
+  if (String(userId) === String(requesterId)) {
+    throw new AppError("You cannot remove yourself from the workspace.", 400);
+  }
+
+  const targetMembership = await findMembership(workspaceId, userId);
+
+  if (!targetMembership) {
+    throw new AppError("Member not found.", 404);
+  }
+
+  if (targetMembership.role === "owner") {
+    throw new AppError("The workspace owner cannot be removed.", 403);
+  }
+
+  if (targetMembership.role === "admin" && requesterMembership.role !== "owner") {
+    throw new AppError("Only the workspace owner can remove an admin.", 403);
+  }
+
+  await removeMemberAndUnassignTasks({ workspaceId, userId });
 }

@@ -8,6 +8,7 @@ import {
   addMemberToWorkspace,
   listMembersForWorkspace,
   getWorkspaceById,
+  removeMemberFromWorkspace,
 } from "./workspace.service.js";
 
 export async function createWorkspaceController(req, res) {
@@ -79,5 +80,18 @@ export async function getWorkspaceController(req, res) {
     data: {
       workspace,
     },
+  });
+}
+
+export async function removeMemberController(req, res) {
+  await removeMemberFromWorkspace({
+    workspaceId: req.params.workspaceId,
+    requesterId: req.user.id,
+    userId: req.params.userId,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "Member removed successfully.",
   });
 }

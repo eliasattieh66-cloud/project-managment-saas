@@ -122,3 +122,37 @@ export async function findWorkspaceById(workspaceId) {
 
   return result.rows[0] || null;
 }
+export async function removeMemberAndUnassignTasks({ workspaceId, userId }) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `
+      UPDATE tasks
+      SET assigned_to = NULL, updated_at = NOW()
+      WHERE assigned_to = $1
+        AND project_id IN (
+          SELECT id FROM projects WHERE workspace_id = $2
+        )
+      `,
+      [userId, workspaceId]
+    );
+
+    await client.query(
+      `
+      DELETE FROM workspace_members
+      WHERE workspace_id = $1 AND user_id = $2
+      `,
+      [workspaceId, userId]
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
