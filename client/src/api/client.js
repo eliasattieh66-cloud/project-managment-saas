@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:5000/api";
+export const API_BASE_URL = "http://localhost:5000/api";
 
 export function getToken() {
   return localStorage.getItem("token");
@@ -15,8 +15,10 @@ export function clearToken() {
 export async function apiRequest(endpoint, options = {}) {
   const token = getToken();
 
+  const isFormData = options.body instanceof FormData;
+
   const headers = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...options.headers,
   };
 

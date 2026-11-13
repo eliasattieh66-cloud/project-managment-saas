@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { getWorkspaceMembers } from "../api/workspaces.js";
 import { getTask, updateTask } from "../api/tasks.js";
 import TaskComments from "../components/TaskComments.jsx";
+import TaskAttachments from "../components/TaskAttachments.jsx";
 
 const STATUS_LABELS = {
   todo: "To do",
@@ -336,6 +337,12 @@ function TaskPage() {
               <p className="task-fade mt-2 italic text-slate-400">No description.</p>
             )}
           </section>
+
+          <TaskAttachments
+            workspaceId={workspaceId}
+            projectId={projectId}
+            taskId={taskId}
+          />
 
           <TaskComments
             workspaceId={workspaceId}
