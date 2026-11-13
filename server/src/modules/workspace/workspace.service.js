@@ -7,6 +7,7 @@ import {
   findWorkspaceById,
   removeMemberAndUnassignTasks,
   updateMemberRole,
+  updateWorkspaceName,
 } from "./workspace.repository.js";
 import { findUserByEmail } from "../auth/auth.repository.js";
 import { AppError } from "../../utils/AppError.js";
@@ -143,4 +144,20 @@ export async function changeMemberRole({ workspaceId, requesterId, userId, role 
   const member = await updateMemberRole({ workspaceId, userId, role });
 
   return member;
+}
+
+export async function renameWorkspace({ workspaceId, requesterId, name }) {
+  const requesterMembership = await findMembership(workspaceId, requesterId);
+
+  if (!requesterMembership) {
+    throw new AppError("Workspace not found.", 404);
+  }
+
+  if (!["owner", "admin"].includes(requesterMembership.role)) {
+    throw new AppError("You do not have permission to rename this workspace.", 403);
+  }
+
+  const workspace = await updateWorkspaceName({ workspaceId, name });
+
+  return workspace;
 }

@@ -9,6 +9,7 @@ import {
   getWorkspaceController,
   removeMemberController,
   updateMemberRoleController,
+  renameWorkspaceController,
 } from "./workspace.controller.js";
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.get("/", authenticate, asyncHandler(listWorkspacesController));
 router.post("/:workspaceId/members", authenticate, asyncHandler(addMemberController));
 router.get("/:workspaceId/members", authenticate, asyncHandler(listMembersController));
 router.get("/:workspaceId", authenticate, asyncHandler(getWorkspaceController));
+router.patch("/:workspaceId", authenticate, asyncHandler(renameWorkspaceController));
 router.delete("/:workspaceId/members/:userId", authenticate, asyncHandler(removeMemberController));
 router.patch("/:workspaceId/members/:userId", authenticate, asyncHandler(updateMemberRoleController));
 

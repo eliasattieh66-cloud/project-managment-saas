@@ -170,3 +170,17 @@ export async function updateMemberRole({ workspaceId, userId, role }) {
 
   return result.rows[0];
 }
+
+export async function updateWorkspaceName({ workspaceId, name }) {
+  const result = await pool.query(
+    `
+    UPDATE workspaces
+    SET name = $1, updated_at = NOW()
+    WHERE id = $2
+    RETURNING id, name, owner_id, created_at, updated_at
+    `,
+    [name, workspaceId]
+  );
+
+  return result.rows[0];
+}

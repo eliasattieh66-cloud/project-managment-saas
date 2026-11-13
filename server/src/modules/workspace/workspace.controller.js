@@ -11,6 +11,7 @@ import {
   getWorkspaceById,
   removeMemberFromWorkspace,
   changeMemberRole,
+  renameWorkspace,
 } from "./workspace.service.js";
 
 export async function createWorkspaceController(req, res) {
@@ -112,6 +113,23 @@ export async function updateMemberRoleController(req, res) {
     status: "success",
     data: {
       member,
+    },
+  });
+}
+
+export async function renameWorkspaceController(req, res) {
+  const validatedData = validateCreateWorkspaceInput(req.body);
+
+  const workspace = await renameWorkspace({
+    workspaceId: req.params.workspaceId,
+    requesterId: req.user.id,
+    name: validatedData.name,
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      workspace,
     },
   });
 }
