@@ -70,10 +70,12 @@ export async function assignTaskInProject({ workspaceId, projectId, taskId, requ
     throw new AppError("Task not found.", 404);
   }
 
-  const targetMembership = await findMembership(workspaceId, userId);
+  if (userId !== null) {
+    const targetMembership = await findMembership(workspaceId, userId);
 
-  if (!targetMembership) {
-    throw new AppError("User must be a member of this workspace to be assigned this task.", 400);
+    if (!targetMembership) {
+      throw new AppError("User must be a member of this workspace to be assigned this task.", 400);
+    }
   }
 
   const updatedTask = await assignTask({ taskId, projectId, assignedTo: userId });

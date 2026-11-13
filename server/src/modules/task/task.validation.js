@@ -60,14 +60,15 @@ export function validateCreateTaskInput({ title, description, priority, dueDate 
 export function validateAssignTaskInput({ userId }) {
   const errors = {};
 
-  if (userId === undefined || userId === null) {
-    errors.userId = "userId is required.";
+  if (userId === undefined) {
+    errors.userId = "userId is required. Use null to unassign.";
   } else if (
-    (typeof userId !== "number" && typeof userId !== "string") ||
-    String(userId).trim().length === 0 ||
-    Number.isNaN(Number(userId))
+    userId !== null &&
+    ((typeof userId !== "number" && typeof userId !== "string") ||
+      String(userId).trim().length === 0 ||
+      Number.isNaN(Number(userId)))
   ) {
-    errors.userId = "userId must be a valid number.";
+    errors.userId = "userId must be a valid number or null.";
   }
 
   if (Object.keys(errors).length > 0) {

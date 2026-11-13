@@ -648,11 +648,11 @@ function ProjectPage() {
                               id={`assignee-${task.id}`}
                               value={task.assigned_to ?? ""}
                               onChange={(event) =>
-                                handleAssign(task.id, event.target.value)
+                                handleAssign(task.id, event.target.value || null)
                               }
                               className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-indigo-500"
                             >
-                              <option value="" disabled>
+                              <option value="">
                                 Unassigned
                               </option>
                               {members.map((member) => (
