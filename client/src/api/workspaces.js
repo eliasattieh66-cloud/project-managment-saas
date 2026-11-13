@@ -30,3 +30,9 @@ export async function addWorkspaceMember(workspaceId, email, role) {
   });
   return data.data.member;
 }
+
+export async function removeWorkspaceMember(workspaceId, userId) {
+  await apiRequest(`/workspaces/${workspaceId}/members/${userId}`, {
+    method: "DELETE",
+  });
+}

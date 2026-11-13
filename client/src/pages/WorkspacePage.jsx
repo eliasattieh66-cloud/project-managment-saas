@@ -4,10 +4,12 @@ import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useConfirm } from "../context/confirmContext.js";
 import {
   getWorkspace,
   getWorkspaceMembers,
   addWorkspaceMember,
+  removeWorkspaceMember,
 } from "../api/workspaces.js";
 import { getProjects, createProject } from "../api/projects.js";
 
@@ -33,6 +35,7 @@ function prefersReducedMotion() {
 function WorkspacePage() {
   const { workspaceId } = useParams();
   const { user } = useAuth();
+  const confirm = useConfirm();
 
   const [workspace, setWorkspace] = useState(null);
   const [members, setMembers] = useState([]);
@@ -44,6 +47,9 @@ function WorkspacePage() {
   const [memberRole, setMemberRole] = useState("member");
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState("");
+
+  const [removingId, setRemovingId] = useState(null);
+  const [removeError, setRemoveError] = useState("");
 
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
@@ -185,6 +191,52 @@ function WorkspacePage() {
     });
   });
 
+  const handleRemoveMember = contextSafe(async (member, element) => {
+    const confirmed = await confirm({
+      title: `Remove ${member.name}?`,
+      message: `${member.name} will lose access to this workspace, and their tasks here will be unassigned.`,
+      confirmLabel: "Remove",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setRemoveError("");
+    setRemovingId(member.id);
+
+    try {
+      await removeWorkspaceMember(workspaceId, member.id);
+    } catch (error) {
+      setRemoveError(error.message);
+      setRemovingId(null);
+      return;
+    }
+
+    function removeFromList() {
+      setMembers((currentMembers) =>
+        currentMembers.filter((item) => item.id !== member.id)
+      );
+      setRemovingId(null);
+    }
+
+    if (prefersReducedMotion()) {
+      removeFromList();
+      return;
+    }
+
+    gsap.to(element, {
+      opacity: 0,
+      x: 40,
+      height: 0,
+      paddingTop: 0,
+      paddingBottom: 0,
+      duration: 0.4,
+      ease: "power2.in",
+      onComplete: removeFromList,
+    });
+  });
+
   async function handleAddMember(event) {
     event.preventDefault();
     setAddError("");
@@ -247,6 +299,18 @@ function WorkspacePage() {
   const currentMember = members.find((member) => member.id === user.id);
   const canManageMembers =
     currentMember && ["owner", "admin"].includes(currentMember.role);
+
+  function canRemoveMember(member) {
+    if (!canManageMembers || member.id === user.id || member.role === "owner") {
+      return false;
+    }
+
+    if (member.role === "admin") {
+      return currentMember.role === "owner";
+    }
+
+    return true;
+  }
   const canCreateProjects =
     currentMember && ["owner", "admin", "member"].includes(currentMember.role);
 
@@ -388,9 +452,15 @@ function WorkspacePage() {
           <section className="side-card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Members</h2>
 
+            {removeError && (
+              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {removeError}
+              </p>
+            )}
+
             <ul className="mt-4 divide-y divide-slate-100">
               {members.map((member) => (
-                <li key={member.id} className="member-row flex items-center gap-3 py-3">
+                <li key={member.id} className="member-row flex items-center gap-3 overflow-hidden py-3">
                   <span className="member-avatar flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
                     {member.name.charAt(0).toUpperCase()}
                   </span>
@@ -404,6 +474,18 @@ function WorkspacePage() {
                     <p className="truncate text-xs text-slate-500">
                       {member.email}
                     </p>
+                    {canRemoveMember(member) && (
+                      <button
+                        type="button"
+                        onClick={(event) =>
+                          handleRemoveMember(member, event.currentTarget.closest("li"))
+                        }
+                        disabled={removingId === member.id}
+                        className="mt-1 text-xs font-medium text-slate-400 transition-colors hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {removingId === member.id ? "Removing..." : "Remove"}
+                      </button>
+                    )}
                   </div>
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${ROLE_BADGE_CLASSES[member.role]}`}
