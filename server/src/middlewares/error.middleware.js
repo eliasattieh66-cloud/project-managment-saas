@@ -13,6 +13,20 @@ export function errorHandler(error, req, res, next) {
     });
   }
 
+  if (error.type === "entity.too.large") {
+    return res.status(413).json({
+      status: "error",
+      message: "Request body is too large.",
+    });
+  }
+
+  if (error.type === "entity.parse.failed") {
+    return res.status(400).json({
+      status: "error",
+      message: "Invalid JSON in request body.",
+    });
+  }
+
   const statusCode = error.statusCode || 500;
 
   const response = {
