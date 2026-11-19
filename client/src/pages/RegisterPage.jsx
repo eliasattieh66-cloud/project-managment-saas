@@ -1,9 +1,12 @@
-import { useState, useRef } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { Link, Navigate } from "react-router-dom";
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { resendVerification } from "../api/auth.js";
+
+const RESEND_COOLDOWN_SECONDS = 30;
 
 gsap.registerPlugin(useGSAP, SplitText);
 
@@ -12,8 +15,7 @@ function prefersReducedMotion() {
 }
 
 function RegisterPage() {
-  const { user, register, login } = useAuth();
-  const navigate = useNavigate();
+  const { user, register } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,7 +23,21 @@ function RegisterPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+
   const pageRef = useRef(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) {
+      return;
+    }
+
+    const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   useGSAP(
     () => {
@@ -91,6 +107,36 @@ function RegisterPage() {
     { scope: pageRef, dependencies: [error] }
   );
 
+  useGSAP(
+    () => {
+      if (!registeredEmail || prefersReducedMotion()) {
+        return;
+      }
+
+      gsap
+        .timeline()
+        .from(".inbox-card", {
+          opacity: 0,
+          y: 30,
+          scale: 0.95,
+          duration: 0.6,
+          ease: "back.out(1.6)",
+          clearProps: "all",
+        })
+        .from(
+          ".inbox-icon",
+          { scale: 0, rotate: -20, duration: 0.5, ease: "back.out(3)", clearProps: "all" },
+          "<0.2"
+        )
+        .from(
+          ".inbox-card > *:not(.inbox-icon)",
+          { opacity: 0, y: 12, duration: 0.4, stagger: 0.08, clearProps: "all" },
+          "<0.1"
+        );
+    },
+    { scope: pageRef, dependencies: [registeredEmail] }
+  );
+
   if (user) {
     return <Navigate to="/" replace />;
   }
@@ -102,12 +148,28 @@ function RegisterPage() {
 
     try {
       await register(name, email, password);
-      await login(email, password);
-      navigate("/", { replace: true });
+      setRegisteredEmail(email.trim().toLowerCase());
+      setPassword("");
+      setCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (error) {
       setError(error.message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleResend() {
+    setResendMessage("");
+    setResending(true);
+
+    try {
+      const message = await resendVerification(registeredEmail);
+      setResendMessage(message);
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch (error) {
+      setResendMessage(error.message);
+    } finally {
+      setResending(false);
     }
   }
 
@@ -135,6 +197,53 @@ function RegisterPage() {
           </p>
         </div>
 
+        {registeredEmail ? (
+          <div className="inbox-card space-y-4 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50">
+            <span className="inbox-icon mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-2xl">
+              ✉️
+            </span>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Check your inbox
+            </h2>
+            <p className="text-sm text-slate-500">
+              We sent a verification link to{" "}
+              <span className="font-semibold text-slate-900">
+                {registeredEmail}
+              </span>
+              . Click it to activate your account, then log in.
+            </p>
+            <p className="text-xs text-slate-400">
+              The link expires in 24 hours. Can't find it? Check your spam
+              folder.
+            </p>
+
+            {resendMessage && (
+              <p className="rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm text-indigo-700">
+                {resendMessage}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resending || cooldown > 0}
+              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {resending
+                ? "Sending..."
+                : cooldown > 0
+                  ? `Resend email in ${cooldown}s`
+                  : "Resend email"}
+            </button>
+
+            <Link
+              to="/login"
+              className="block w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+            >
+              Go to login
+            </Link>
+          </div>
+        ) : (
         <form
           onSubmit={handleSubmit}
           className="auth-card space-y-5 rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50"
@@ -208,6 +317,7 @@ function RegisterPage() {
             {submitting ? "Creating account..." : "Create account"}
           </button>
         </form>
+        )}
 
         <p className="auth-footer mt-6 text-center text-sm text-slate-500">
           Already have an account?{" "}

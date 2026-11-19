@@ -1,9 +1,12 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { resendVerification } from "../api/auth.js";
+
+const RESEND_COOLDOWN_SECONDS = 30;
 
 gsap.registerPlugin(useGSAP, SplitText);
 
@@ -20,7 +23,21 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+
   const pageRef = useRef(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) {
+      return;
+    }
+
+    const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   useGSAP(
     () => {
@@ -97,6 +114,8 @@ function LoginPage() {
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+    setNeedsVerification(false);
+    setResendMessage("");
     setSubmitting(true);
 
     try {
@@ -104,8 +123,24 @@ function LoginPage() {
       navigate("/", { replace: true });
     } catch (error) {
       setError(error.message);
+      setNeedsVerification(error.status === 403);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleResend() {
+    setResendMessage("");
+    setResending(true);
+
+    try {
+      const message = await resendVerification(email);
+      setResendMessage(message);
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch (error) {
+      setResendMessage(error.message);
+    } finally {
+      setResending(false);
     }
   }
 
@@ -175,6 +210,29 @@ function LoginPage() {
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
             </p>
+          )}
+
+          {needsVerification && (
+            <div className="space-y-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-3 text-sm">
+              <p className="text-indigo-700">
+                Didn't get the email, or the link expired?
+              </p>
+              {resendMessage && (
+                <p className="text-xs text-indigo-600">{resendMessage}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resending || cooldown > 0}
+                className="w-full rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {resending
+                  ? "Sending..."
+                  : cooldown > 0
+                    ? `Resend verification email in ${cooldown}s`
+                    : "Resend verification email"}
+              </button>
+            </div>
           )}
 
           <button

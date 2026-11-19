@@ -4,6 +4,7 @@ import Layout from "./components/Layout.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
+import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import WorkspacePage from "./pages/WorkspacePage.jsx";
 import ProjectPage from "./pages/ProjectPage.jsx";
@@ -15,6 +16,7 @@ function App() {
       <Route path="/welcome" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       <Route
         element={
