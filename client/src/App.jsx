@@ -1,7 +1,7 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Layout from "./components/Layout.jsx";
-import LandingPage from "./pages/LandingPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
@@ -10,10 +10,19 @@ import WorkspacePage from "./pages/WorkspacePage.jsx";
 import ProjectPage from "./pages/ProjectPage.jsx";
 import TaskPage from "./pages/TaskPage.jsx";
 
+const LandingPage = lazy(() => import("./pages/LandingPage.jsx"));
+
 function App() {
   return (
     <Routes>
-      <Route path="/welcome" element={<LandingPage />} />
+      <Route
+        path="/welcome"
+        element={
+          <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+            <LandingPage />
+          </Suspense>
+        }
+      />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
