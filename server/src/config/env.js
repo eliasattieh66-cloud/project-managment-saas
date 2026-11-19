@@ -14,4 +14,7 @@ export const env = {
   databaseUrl: getRequiredEnv("DATABASE_URL"),
   jwtSecret: getRequiredEnv("JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
+  resendApiKey: getRequiredEnv("RESEND_API_KEY"),
+  emailFrom: process.env.EMAIL_FROM || "TaskFlow <onboarding@resend.dev>",
+  clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
 };

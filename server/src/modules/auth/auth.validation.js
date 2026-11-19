@@ -49,3 +49,32 @@ export function validateLoginInput(data) {
     errors,
   };
 }
+export function validateVerifyEmailInput(data) {
+  const errors = [];
+
+  if (isEmpty(data.token)) {
+    errors.push("Verification token is required.");
+  } else if (!/^[a-f0-9]{64}$/.test(data.token)) {
+    errors.push("Verification token is invalid.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+export function validateResendVerificationInput(data) {
+  const errors = [];
+
+  if (isEmpty(data.email)) {
+    errors.push("Email is required.");
+  } else if (!isValidEmail(data.email)) {
+    errors.push("Email must be a valid email address.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
