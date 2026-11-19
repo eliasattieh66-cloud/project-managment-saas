@@ -8,11 +8,12 @@ import projectRoutes from "./modules/project/project.routes.js";
 import taskRoutes from "./modules/task/task.routes.js";
 import commentRoutes from "./modules/comment/comment.routes.js";
 import attachmentRoutes from "./modules/attachment/attachment.routes.js";
+import { env } from "./config/env.js";
 const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: env.clientUrl,
   })
 );
 app.use(express.json());
