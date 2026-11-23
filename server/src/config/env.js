@@ -17,4 +17,6 @@ export const env = {
   resendApiKey: getRequiredEnv("RESEND_API_KEY"),
   emailFrom: process.env.EMAIL_FROM || "TaskFlow <onboarding@resend.dev>",
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
+  turnstileSecretKey: getRequiredEnv("TURNSTILE_SECRET_KEY"),
+
 };

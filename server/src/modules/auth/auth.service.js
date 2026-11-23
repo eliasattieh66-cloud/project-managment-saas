@@ -10,6 +10,7 @@ import { AppError } from "../../utils/AppError.js";
 import { env } from "../../config/env.js";
 import { sendVerificationEmail } from "../../utils/email.js";
 import { generateVerificationToken, hashToken } from "../../utils/verificationToken.js";
+import { verifyTurnstileToken } from "../../utils/turnstile.js";
 
 const PASSWORD_SALT_ROUNDS = 10;
 
@@ -27,7 +28,13 @@ async function sendNewVerificationEmail(user) {
   });
 }
 
-export async function registerUser({ name, email, password }) {
+export async function registerUser({ name, email, password, turnstileToken, ip }) {
+  const isHuman = await verifyTurnstileToken(turnstileToken, ip);
+
+  if (!isHuman) {
+    throw new AppError("Human verification failed. Please try again.", 400);
+  }
+
   const normalizedEmail = email.toLowerCase().trim();
 
   const existingUser = await findUserByEmail(normalizedEmail);

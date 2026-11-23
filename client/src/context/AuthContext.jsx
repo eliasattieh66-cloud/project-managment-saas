@@ -39,10 +39,10 @@ export function AuthProvider({ children }) {
     setUser(data.user);
   }
 
-  async function register(name, email, password) {
+  async function register(name, email, password, turnstileToken) {
     await apiRequest("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, turnstileToken }),
     });
   }
 

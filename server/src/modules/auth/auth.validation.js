@@ -25,6 +25,10 @@ export function validateRegisterInput(data) {
     errors.push("Password must be at least 8 characters long.");
   }
 
+  if (isEmpty(data.turnstileToken)) {
+    errors.push("Please complete the human verification check.");
+  }
+
   return {
     isValid: errors.length === 0,
     errors,

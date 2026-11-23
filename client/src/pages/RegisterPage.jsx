@@ -3,10 +3,12 @@ import { Link, Navigate } from "react-router-dom";
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { useAuth } from "../context/AuthContext.jsx";
 import { resendVerification } from "../api/auth.js";
 
 const RESEND_COOLDOWN_SECONDS = 30;
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
 gsap.registerPlugin(useGSAP, SplitText);
 
@@ -22,6 +24,7 @@ function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
 
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [resending, setResending] = useState(false);
@@ -29,6 +32,7 @@ function RegisterPage() {
   const [cooldown, setCooldown] = useState(0);
 
   const pageRef = useRef(null);
+  const turnstileRef = useRef(null);
 
   useEffect(() => {
     if (cooldown <= 0) {
@@ -147,12 +151,14 @@ function RegisterPage() {
     setSubmitting(true);
 
     try {
-      await register(name, email, password);
+      await register(name, email, password, turnstileToken);
       setRegisteredEmail(email.trim().toLowerCase());
       setPassword("");
       setCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (error) {
       setError(error.message);
+      setTurnstileToken("");
+      turnstileRef.current?.reset();
     } finally {
       setSubmitting(false);
     }
@@ -303,6 +309,20 @@ function RegisterPage() {
             </p>
           </div>
 
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={TURNSTILE_SITE_KEY}
+            onSuccess={setTurnstileToken}
+            onExpire={() => setTurnstileToken("")}
+            onError={() => {
+              setTurnstileToken("");
+              setError(
+                "Human verification could not load. Please refresh the page."
+              );
+            }}
+            options={{ size: "flexible", theme: "light" }}
+          />
+
           {error && (
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
@@ -311,7 +331,7 @@ function RegisterPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !turnstileToken}
             className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Creating account..." : "Create account"}

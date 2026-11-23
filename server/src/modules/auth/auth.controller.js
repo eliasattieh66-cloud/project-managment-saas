@@ -20,7 +20,7 @@ export async function register(req, res) {
     throw new AppError("Validation failed.", 400, validation.errors);
   }
 
-  const user = await registerUser(req.body);
+  const user = await registerUser({ ...req.body, ip: req.ip });
 
   return res.status(201).json({
     message: "Account created. Please check your email to verify your account.",
