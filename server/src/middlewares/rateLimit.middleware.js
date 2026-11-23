@@ -31,3 +31,16 @@ export const resendVerificationLimiter = createLimiter({
   message:
     "Too many verification emails requested. Please try again in 15 minutes.",
 });
+
+export const forgotPasswordLimiter = createLimiter({
+  windowMinutes: 15,
+  limit: 3,
+  message:
+    "Too many password reset requests. Please try again in 15 minutes.",
+});
+
+export const resetPasswordLimiter = createLimiter({
+  windowMinutes: 15,
+  limit: 10,
+  message: "Too many password reset attempts. Please try again in 15 minutes.",
+});

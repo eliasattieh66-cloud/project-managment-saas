@@ -82,3 +82,39 @@ export function validateResendVerificationInput(data) {
     errors,
   };
 }
+
+export function validateForgotPasswordInput(data) {
+  const errors = [];
+
+  if (isEmpty(data.email)) {
+    errors.push("Email is required.");
+  } else if (!isValidEmail(data.email)) {
+    errors.push("Email must be a valid email address.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+export function validateResetPasswordInput(data) {
+  const errors = [];
+
+  if (isEmpty(data.token)) {
+    errors.push("Reset token is required.");
+  } else if (!/^[a-f0-9]{64}$/.test(data.token)) {
+    errors.push("Reset token is invalid.");
+  }
+
+  if (isEmpty(data.password)) {
+    errors.push("Password is required.");
+  } else if (data.password.length < 8) {
+    errors.push("Password must be at least 8 characters long.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}

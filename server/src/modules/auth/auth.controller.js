@@ -3,12 +3,16 @@ import {
   registerUser,
   verifyEmail,
   resendVerification,
+  requestPasswordReset,
+  resetPassword,
 } from "./auth.service.js";
 import {
   validateLoginInput,
   validateRegisterInput,
   validateVerifyEmailInput,
   validateResendVerificationInput,
+  validateForgotPasswordInput,
+  validateResetPasswordInput,
 } from "./auth.validation.js";
 import { AppError } from "../../utils/AppError.js";
 import { generateAuthToken } from "../../utils/token.js";
@@ -54,6 +58,38 @@ export async function resendVerificationController(req, res) {
   return res.status(200).json({
     message:
       "If this email has an account that needs verifying, a new verification email has been sent.",
+  });
+}
+
+export async function forgotPasswordController(req, res) {
+  const validation = validateForgotPasswordInput(req.body);
+
+  if (!validation.isValid) {
+    throw new AppError("Validation failed.", 400, validation.errors);
+  }
+
+  await requestPasswordReset({ email: req.body.email });
+
+  return res.status(200).json({
+    message:
+      "If an account exists for this email, we've sent a link to reset your password.",
+  });
+}
+
+export async function resetPasswordController(req, res) {
+  const validation = validateResetPasswordInput(req.body);
+
+  if (!validation.isValid) {
+    throw new AppError("Validation failed.", 400, validation.errors);
+  }
+
+  await resetPassword({
+    token: req.body.token,
+    password: req.body.password,
+  });
+
+  return res.status(200).json({
+    message: "Your password has been changed. You can now log in.",
   });
 }
 

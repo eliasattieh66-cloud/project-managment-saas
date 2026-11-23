@@ -5,14 +5,18 @@ import {
   replaceVerificationToken,
   findValidVerificationToken,
   markEmailVerified,
+  replacePasswordResetToken,
+  findValidPasswordResetToken,
+  updatePasswordAndClearResetTokens,
 } from "./auth.repository.js";
 import { AppError } from "../../utils/AppError.js";
 import { env } from "../../config/env.js";
-import { sendVerificationEmail } from "../../utils/email.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "../../utils/email.js";
 import { generateVerificationToken, hashToken } from "../../utils/verificationToken.js";
 import { verifyTurnstileToken } from "../../utils/turnstile.js";
 
 const PASSWORD_SALT_ROUNDS = 10;
+const PASSWORD_RESET_LIFETIME_MINUTES = 60;
 
 async function sendNewVerificationEmail(user) {
   const { token, tokenHash, expiresAt } = generateVerificationToken();
@@ -82,6 +86,52 @@ export async function resendVerification({ email }) {
   }
 
   await sendNewVerificationEmail(user);
+}
+
+export async function requestPasswordReset({ email }) {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const user = await findUserByEmail(normalizedEmail);
+
+  if (!user) {
+    return;
+  }
+
+  const { token, tokenHash } = generateVerificationToken();
+  const expiresAt = new Date(
+    Date.now() + PASSWORD_RESET_LIFETIME_MINUTES * 60 * 1000
+  );
+
+  await replacePasswordResetToken({ userId: user.id, tokenHash, expiresAt });
+
+  const resetUrl = `${env.clientUrl}/reset-password?token=${token}`;
+
+  try {
+    await sendPasswordResetEmail({
+      to: user.email,
+      name: user.name,
+      resetUrl,
+    });
+  } catch (error) {
+    console.error("Failed to send password reset email:", error);
+  }
+}
+
+export async function resetPassword({ token, password }) {
+  const tokenHash = hashToken(token);
+
+  const resetToken = await findValidPasswordResetToken(tokenHash);
+
+  if (!resetToken) {
+    throw new AppError("This reset link is invalid or has expired.", 400);
+  }
+
+  const passwordHash = await bcrypt.hash(password, PASSWORD_SALT_ROUNDS);
+
+  await updatePasswordAndClearResetTokens({
+    userId: resetToken.user_id,
+    passwordHash,
+  });
 }
 
 export async function loginUser({ email, password }) {

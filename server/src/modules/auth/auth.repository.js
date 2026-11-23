@@ -131,3 +131,82 @@ export async function markEmailVerified(userId) {
     client.release();
   }
 }
+
+export async function replacePasswordResetToken({ userId, tokenHash, expiresAt }) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `
+      DELETE FROM password_reset_tokens
+      WHERE user_id = $1
+      `,
+      [userId]
+    );
+
+    await client.query(
+      `
+      INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+      VALUES ($1, $2, $3)
+      `,
+      [userId, tokenHash, expiresAt]
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function findValidPasswordResetToken(tokenHash) {
+  const result = await pool.query(
+    `
+    SELECT id, user_id, expires_at
+    FROM password_reset_tokens
+    WHERE token_hash = $1 AND expires_at > NOW()
+    `,
+    [tokenHash]
+  );
+
+  return result.rows[0] || null;
+}
+
+export async function updatePasswordAndClearResetTokens({ userId, passwordHash }) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `
+      UPDATE users
+      SET
+        password_hash = $2,
+        email_verified_at = COALESCE(email_verified_at, NOW()),
+        updated_at = NOW()
+      WHERE id = $1
+      `,
+      [userId, passwordHash]
+    );
+
+    await client.query(
+      `
+      DELETE FROM password_reset_tokens
+      WHERE user_id = $1
+      `,
+      [userId]
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
