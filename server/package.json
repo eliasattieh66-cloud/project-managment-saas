@@ -5,7 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "test": "vitest"
   },
   "keywords": [],
   "author": "Elias Attieh",
@@ -21,5 +22,8 @@
     "multer": "^2.3.0",
     "pg": "^8.23.0",
     "resend": "^6.39.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.12"
   }
 }
